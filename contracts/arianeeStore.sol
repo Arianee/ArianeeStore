@@ -77,8 +77,7 @@ contract ERC721Interface {
     function ownerOf(uint256 assetId) public view returns (address);
     function safeTransferFrom(address from, address to, uint256 assetId) public;
     function isAuthorized(address operator, uint256 assetId) public view returns (bool);
-    function createFor(address _for, string value) public returns (uint256);
-
+    function reserveToken(uint256 id) public returns (bool);
 }
 
 contract ArianeeStore is Pausable, ERC900BasicStakeContract {
