@@ -1,7 +1,7 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.1;
 
 
-import "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
+import "@0xcert/ethereum-erc721-contracts/src/contracts/nf-token-metadata-enumerable.sol";
 
 import "./ERC900BasicStakeContract.sol";
 import "./Ownable.sol";
@@ -58,34 +58,6 @@ contract Pausable is  Ownable {
     paused = false;
     emit Unpause();
   }
-}
-
-// File: openzeppelin-zos/contracts/AddressUtils.sol
-
-/**
- * Utility library of inline functions on addresses
- */
-library AddressUtils {
-
-  /**
-   * Returns whether the target address is a contract
-   * @dev This function will return false if invoked during the constructor of a contract,
-   *  as the code is not actually created until after the constructor finishes.
-   * @param addr address to check
-   * @return whether the target address is a contract
-   */
-  function isContract(address addr) internal view returns (bool) {
-    uint256 size;
-    // XXX Currently there is no better way to check if there is a contract in an address
-    // than to check the size of the code at that address.
-    // See https://ethereum.stackexchange.com/a/14016/36603
-    // for more details about how this works.
-    // TODO Check this again before the Serenity release, because all addresses will be
-    // contracts then.
-    assembly { size := extcodesize(addr) }  // solium-disable-line security/no-inline-assembly
-    return size > 0;
-  }
-
 }
 
 // File: contracts/ArianeeStore.sol
@@ -149,8 +121,8 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
     //Pausable(msg.sender);
     
     //require(_acceptedToken.isContract(), "The accepted token address must be a deployed contract");
-    acceptedToken = ERC20Interface(_acceptedToken);
-    nonFungibleRegistry = ERC721Interface(_nonFungibleRegistry);
+    acceptedToken = ERC20Interface(address(_acceptedToken));
+    nonFungibleRegistry = ERC721Interface(address(_nonFungibleRegistry));
 
   }
   
@@ -203,30 +175,24 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
   }
 
   // 
-  function createFor(address _for, string value) public spendSmartAssetsCredit(1) returns (uint256) {
-
-    return nonFungibleRegistry.createFor(_for, value);
-  
+  function reserveToken(uint256 _id) public spendSmartAssetsCredit(1) returns (bool){
+    return nonFungibleRegistry.reserveToken(_id);
   }
   
 
   function transferAria(address to, uint tokens) public returns (bool){
-              // Transfer share amount for marketplace Owner.
-            return acceptedToken.transferFrom(
-                msg.sender,
-                to,
-                tokens
-            );
+          // Transfer share amount for marketplace Owner.
+        return acceptedToken.transferFrom(
+            msg.sender,
+            to,
+            tokens
+        );
   }
 
 
   function balanceOfAria() public view returns (uint){
-              // Transfer share amount for marketplace Owner.
-
-
-            return acceptedToken.balanceOf(
-                msg.sender
-            );
+        // Transfer share amount for marketplace Owner.
+        return acceptedToken.balanceOf(msg.sender);
   }
 
 
