@@ -19,11 +19,6 @@ contract Pausable is  Ownable {
 
   bool public paused = false;
 
-/*
-  function initialize(address _sender) isInitializer("Pausable", "1.9.0")  public {
-    Ownable.initialize(_sender);
-  }
-*/
   constructor() public {
       Ownable(msg.sender);
   }
@@ -76,10 +71,8 @@ contract ERC20Interface {
  * @title Interface for contracts conforming to ERC-721
  */
 contract ERC721Interface {
-    function ownerOf(uint256 assetId) public view returns (address);
-    function safeTransferFrom(address from, address to, uint256 assetId) public;
-    function isAuthorized(address operator, uint256 assetId) public view returns (bool);
-    function reserveToken(uint256 id) public returns (bool);
+    function reserveToken(uint256 id) public;
+    function reserveTokens(uint256 _first, uint256 _last) public;
 }
 
 contract ArianeeStore is Pausable, ERC900BasicStakeContract {
