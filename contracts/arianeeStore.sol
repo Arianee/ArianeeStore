@@ -1,6 +1,6 @@
 pragma solidity 0.5.1;
 
-
+import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
 import "@0xcert/ethereum-erc721-contracts/src/contracts/nf-token-metadata-enumerable.sol";
 
 import "./ERC900BasicStakeContract.sol";
@@ -14,6 +14,8 @@ import "./Ownable.sol";
 contract Pausable is  Ownable {
   event Pause();
   event Unpause();
+  
+  using SafeMath for uint256;
 
   bool public paused = false;
 
@@ -137,7 +139,7 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
   
   function buyCredit(uint256 creditType, uint256 quantity) public returns (bool) {
       
-      uint256 tokens = quantity * creditPrices[creditType];
+      uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
       
       // Transfer required token quantity to buy quantity credit
       require(acceptedToken.transferFrom(
