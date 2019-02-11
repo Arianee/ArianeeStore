@@ -149,29 +149,34 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
             ));
       
 
-      uint256 currentPriceCost = creditsPricesPerAccount[msg.sender][creditType] * credits[msg.sender][creditType];
-
-
+      uint256 currentPriceCost = SafeMath.mul(creditsPricesPerAccount[msg.sender][_creditType], credits[msg.sender][_creditType]);
 
       // Update credit quantity
-      credits[msg.sender][creditType] += quantity;
+      credits[msg.sender][_creditType] = SafeMath.add(credits[msg.sender][_creditType] , _quantity);
 
       // Update avg credit Price
-      creditsPricesPerAccount[msg.sender][creditType] = (currentPriceCost+tokens)/credits[msg.sender][creditType];
+      creditsPricesPerAccount[msg.sender][_creditType] = SafeMath.div((SafeMath.add(currentPriceCost, tokens)),credits[msg.sender][_creditType]);
       
       return true;
   }
 
-
-  modifier spendSmartAssetsCredit(uint256 quantity) {
-    require(credits[msg.sender][1]>=quantity);
-    credits[msg.sender][1] = credits[msg.sender][1] - quantity;
+    /**
+     * @dev Modifier that spend credit
+     * @param _quantity uint256 quantity of credit to spend
+     */
+  modifier spendSmartAssetsCredit(uint256 _quantity) {
+    require(credits[msg.sender][1]>=_quantity);
+    credits[msg.sender][1] = SafeMath.sub(credits[msg.sender][1], _quantity);
     _;
   }
 
-  function spendSmartAssetsCreditFunction(uint256 quantity) public returns (bool) {
-    require(credits[msg.sender][1]>=quantity,"need more credits");
-    credits[msg.sender][1] = credits[msg.sender][1] - quantity;
+/**
+ * @dev Public function to spend credits
+ * @param _quantity uint256 quantity of credit to spend
+ */
+  function spendSmartAssetsCreditFunction(uint256 _quantity) public returns (bool) {
+    require(credits[msg.sender][1]>=_quantity,"need more credits");
+    credits[msg.sender][1] = SafeMath.sub(credits[msg.sender][1], _quantity);
     return true;
   }
 
