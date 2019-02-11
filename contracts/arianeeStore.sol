@@ -121,16 +121,30 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
   }
   
 
-  function setCreditPrice(uint256 creditType, uint256 price) public onlyOwner() returns (bool) {
-    creditPrices[creditType] = price;
+/**
+ * @dev Public function change the price of a credit type
+ * @dev Can only be called by the owner of the contract
+ * @param _creditType uint256 credit type to change the price
+ * @param _price uint256 new price
+ */
+  function setCreditPrice(uint256 _creditType, uint256 _price) public onlyOwner() returns (bool) {
+    creditPrices[_creditType] = _price;
   }
   
-  
-  function getCreditPrice(uint256 creditType) public view returns (uint256) {
-    return creditPrices[creditType];
+  /**
+   * @dev Public function send the price a of a credit 
+   * @param _creditType uint256
+   */
+  function getCreditPrice(uint256 _creditType) public view returns (uint256) {
+    return creditPrices[_creditType];
   }
   
-  function buyCredit(uint256 creditType, uint256 quantity) public returns (bool) {
+  /**
+   * @dev Public function to buy new credit against Aria
+   * @param _creditType uint256 credit type to buy
+   * @param _quantity uint256 quantity to buy
+  */
+  function buyCredit(uint256 _creditType, uint256 _quantity) public returns (bool) {
       
       uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
       
@@ -173,22 +187,43 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
     return true;
   }
 
-  // 
-  function reserveToken(uint256 _id) public spendSmartAssetsCredit(1) returns (bool){
-    return nonFungibleRegistry.reserveToken(_id);
+  /**
+   * @dev Public function to reserve ArianeeSmartAsset
+   * @param _id uint256 id of the NFT
+   */
+  function reserveToken(uint256 _id) public spendSmartAssetsCredit(1){
+    nonFungibleRegistry.reserveToken(_id);
+  }
+  
+  /**
+   * @dev Public function to reserve several ArianeeSmartAsset
+   * @param _first uint256 first ID to reserve
+   * @param _last uint256 last ID to reserve
+   */
+  function reserveTokens(uint256 _first, uint256 _last) public{
+      uint256 _idsNb = SafeMath.sub(_last, _first);
+      spendSmartAssetsCreditFunction(_idsNb);
+      nonFungibleRegistry.reserveTokens(_first, _last);
   }
   
 
-  function transferAria(address to, uint tokens) public returns (bool){
+    /**
+     * @dev Public function to transfer Arias 
+     * @param _to address address to send the Arias
+     * @param _quantity uint256 quantity to send
+     */
+  function transferAria(address _to, uint _quantity) public returns (bool){
           // Transfer share amount for marketplace Owner.
         return acceptedToken.transferFrom(
             msg.sender,
-            to,
-            tokens
+            _to,
+            _quantity
         );
   }
 
-
+    /**
+     * Public function get the msg.sender arias balance
+     */
   function balanceOfAria() public view returns (uint){
         // Transfer share amount for marketplace Owner.
         return acceptedToken.balanceOf(msg.sender);
