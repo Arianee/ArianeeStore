@@ -73,8 +73,14 @@ contract ERC20Interface {
  */
 contract ERC721Interface {
     function reserveToken(uint256 id) public;
-
     function reserveTokens(uint256 _first, uint256 _last) public;
+    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey) public;
+    function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken) public;
+}
+
+contract ArianeeCreditHistory {
+    function addCreditHistory(address _spender, uint256 _price, uint256 _quantity) public;
+    function getCreditPrice(address _spender) public returns(uint256);
 }
 
 contract ArianeeStore is Pausable, ERC900BasicStakeContract {
@@ -84,6 +90,7 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
 
     ERC20Interface public acceptedToken;
     ERC721Interface public nonFungibleRegistry;
+    ArianeeCreditHistory public creditHistory;
 
 
     // Credits for each user for each service
@@ -96,7 +103,12 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
     // 1 => smart asset
     // 2 => message
     // 3 => service
+    mapping(uint256 => uint256) public creditPricesUSD;
     mapping(uint256 => uint256) public creditPrices;
+    uint256 public ariaUSDExchange;
+    address public authorizedExchangeAddress;
+    
+    mapping(uint256=>uint256) tokenFeePrice;
 
     /**
      * @dev Initialize this contract. Acts as a constructor
@@ -105,7 +117,9 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
      */
     constructor(
         ERC20 _acceptedToken,
-        ERC721 _nonFungibleRegistry
+        ERC721 _nonFungibleRegistry,
+        address _creditHistoryAddress
+        
     )
     public ERC900BasicStakeContract(_acceptedToken)
     {
@@ -115,6 +129,7 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
         //require(_acceptedToken.isContract(), "The accepted token address must be a deployed contract");
         acceptedToken = ERC20Interface(address(_acceptedToken));
         nonFungibleRegistry = ERC721Interface(address(_nonFungibleRegistry));
+        creditHistory = ArianeeCreditHistory(address(_creditHistoryAddress));
 
     }
 
@@ -126,7 +141,24 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
      * @param _price uint256 new price
      */
     function setCreditPrice(uint256 _creditType, uint256 _price) public onlyOwner() returns (bool) {
-        creditPrices[_creditType] = _price;
+        creditPricesUSD[_creditType] = _price;
+    }
+    
+    /**
+    *
+    * @param _ariaUSDExchange price of 1 $cent in aria
+    */
+    
+    function setAriaUSDExchange(uint256 _ariaUSDExchange) public {
+        require(msg.sender == authorizedExchangeAddress);
+        ariaUSDExchange = _ariaUSDExchange;
+        creditPrices[0] = creditPricesUSD[0] * _ariaUSDExchange;
+        creditPrices[1] = creditPricesUSD[1] * _ariaUSDExchange;
+        creditPrices[2] = creditPricesUSD[2] * _ariaUSDExchange;
+    }
+    
+    function setAuthorizedExchangeAddress(address _authorizedExchangeAddress) public onlyOwner(){
+        authorizedExchangeAddress = _authorizedExchangeAddress;
     }
 
     /**
@@ -134,7 +166,7 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
      * @param _creditType uint256
      */
     function getCreditPrice(uint256 _creditType) public view returns (uint256) {
-        return creditPrices[_creditType];
+        return creditPricesUSD[_creditType];
     }
 
     /**
@@ -144,7 +176,7 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
      */
     function buyCredit(uint256 _creditType, uint256 _quantity) public returns (bool) {
 
-        uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
+        uint256 tokens = SafeMath.mul(_quantity, creditPricesUSD[_creditType]);
 
         // Transfer required token quantity to buy quantity credit
         require(acceptedToken.transferFrom(
@@ -152,16 +184,12 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
                 owner,
                 tokens
             ));
-
-
-        uint256 currentPriceCost = SafeMath.mul(creditsPricesPerAccount[msg.sender][_creditType], credits[msg.sender][_creditType]);
+        
+        creditHistory.addCreditHistory(msg.sender, creditPricesUSD[_creditType], _quantity);
 
         // Update credit quantity
         credits[msg.sender][_creditType] = SafeMath.add(credits[msg.sender][_creditType], _quantity);
-
-        // Update avg credit Price
-        creditsPricesPerAccount[msg.sender][_creditType] = SafeMath.div((SafeMath.add(currentPriceCost, tokens)), credits[msg.sender][_creditType]);
-
+        
         return true;
     }
 
@@ -203,7 +231,44 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
         spendSmartAssetsCreditFunction(_idsNb);
         nonFungibleRegistry.reserveTokens(_first, _last);
     }
-
+    
+    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public {
+        _dispatchRewardsAtHydrate(_tokenId, _providerBrand);
+        nonFungibleRegistry.hydrateToken(_tokenId, _imprint, _uri, _encryptedInitialKey, _tokenRecoveryTimestamp, _initialKeyIsRequestKey);
+    }
+    
+    function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken, address _providerOwner) public {
+        _dispatchRewardsAtRequest(_tokenId, _providerOwner);
+        nonFungibleRegistry.requestToken(_tokenId, _tokenKey, _keepRequestToken);
+    }
+    
+    address protocolInfraAddress;
+    address arianeeProjectAddress;
+    
+    function setProtoCalInfraAddress(address _protocolInfraAddress) public onlyOwner() {
+        protocolInfraAddress = _protocolInfraAddress;
+    }
+    
+    function setArianeeProjectAddress(address _arianeeProjectAddress) public onlyOwner() {
+        arianeeProjectAddress = _arianeeProjectAddress;
+    }
+    
+    
+    
+    function _dispatchRewardsAtHydrate(uint256 _tokenId, address _providerBrand) internal{
+        uint256 ariaToDispatch = creditHistory.getCreditPrice(msg.sender);
+        tokenFeePrice[_tokenId] = ariaToDispatch;
+        acceptedToken.transferFrom(owner,protocolInfraAddress,(ariaToDispatch/100)*10);
+        acceptedToken.transferFrom(owner,arianeeProjectAddress,(ariaToDispatch/100)*40);
+        acceptedToken.transferFrom(owner,_providerBrand,(ariaToDispatch/100)*20);
+    }
+    
+    function _dispatchRewardsAtRequest(uint256 _tokenId, address _providerOwner) internal{
+        uint256 ariaToDispatch = tokenFeePrice[_tokenId];
+        acceptedToken.transferFrom(owner,_providerOwner,(ariaToDispatch/100)*20);
+        acceptedToken.transferFrom(owner,msg.sender,(ariaToDispatch/100)*10);
+        delete tokenFeePrice[_tokenId];
+    }
 
     /**
      * @dev Public function to transfer Arias 
