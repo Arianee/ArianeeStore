@@ -83,7 +83,7 @@ contract ArianeeCreditHistory {
     function getCreditPrice(address _spender) public returns(uint256);
 }
 
-contract ArianeeStore is Pausable, ERC900BasicStakeContract {
+contract ArianeeStore is Pausable {
     using SafeMath for uint256;
     using AddressUtils for address;
 
@@ -121,7 +121,7 @@ contract ArianeeStore is Pausable, ERC900BasicStakeContract {
         address _creditHistoryAddress
         
     )
-    public ERC900BasicStakeContract(_acceptedToken)
+    public 
     {
 
         //Pausable(msg.sender);
