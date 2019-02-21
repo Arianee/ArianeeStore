@@ -5,7 +5,7 @@ contract ArianeeCreditHistory{
     
     mapping(address => mapping(uint256=>CreditBuy[])) public creditHistory;
   
-  mapping(address => uint256[]) public historyIndex;
+  mapping(address => mapping(uint256=>uint256)) public historyIndex;
   
   struct CreditBuy{
       uint256 price;
@@ -22,6 +22,7 @@ contract ArianeeCreditHistory{
       });
       
       creditHistory[_spender][_type].push(_creditBuy);
+      
   }
 
     function getCreditPrice(address _spender, uint256 _type) public returns (uint256){

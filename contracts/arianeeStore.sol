@@ -79,8 +79,12 @@ contract ERC721Interface {
 }
 
 contract ArianeeCreditHistory {
-    function addCreditHistory(address _spender, uint256 _price, uint256 _quantity) public;
-    function getCreditPrice(address _spender) public returns(uint256);
+    function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) public;
+    function getCreditPrice(address _spender, uint256 _type) public returns(uint256);
+}
+
+contract ArianeeMessage {
+    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint) public;
 }
 
 contract ArianeeStore is Pausable {
@@ -91,6 +95,7 @@ contract ArianeeStore is Pausable {
     ERC20Interface public acceptedToken;
     ERC721Interface public nonFungibleRegistry;
     ArianeeCreditHistory public creditHistory;
+    ArianeeMessage public message;
 
 
     // Credits for each user for each service
@@ -118,7 +123,8 @@ contract ArianeeStore is Pausable {
     constructor(
         ERC20 _acceptedToken,
         ERC721 _nonFungibleRegistry,
-        address _creditHistoryAddress
+        address _creditHistoryAddress,
+        address _messageAddress
         
     )
     public 
@@ -130,6 +136,7 @@ contract ArianeeStore is Pausable {
         acceptedToken = ERC20Interface(address(_acceptedToken));
         nonFungibleRegistry = ERC721Interface(address(_nonFungibleRegistry));
         creditHistory = ArianeeCreditHistory(address(_creditHistoryAddress));
+        message = ArianeeMessage(address(_messageAddress));
 
     }
 
@@ -176,7 +183,7 @@ contract ArianeeStore is Pausable {
      */
     function buyCredit(uint256 _creditType, uint256 _quantity) public returns (bool) {
 
-        uint256 tokens = SafeMath.mul(_quantity, creditPricesUSD[_creditType]);
+        uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
 
         // Transfer required token quantity to buy quantity credit
         require(acceptedToken.transferFrom(
@@ -185,7 +192,7 @@ contract ArianeeStore is Pausable {
                 tokens
             ));
         
-        creditHistory.addCreditHistory(msg.sender, creditPricesUSD[_creditType], _quantity);
+        creditHistory.addCreditHistory(msg.sender, creditPrices[_creditType], _quantity, _creditType);
 
         // Update credit quantity
         credits[msg.sender][_creditType] = SafeMath.add(credits[msg.sender][_creditType], _quantity);
@@ -197,9 +204,9 @@ contract ArianeeStore is Pausable {
      * @dev Modifier that spend credits
      * @param _quantity uint256 quantity of credit to spend
      */
-    modifier spendSmartAssetsCredit(uint256 _quantity) {
-        require(credits[msg.sender][1] >= _quantity);
-        credits[msg.sender][1] = SafeMath.sub(credits[msg.sender][1], _quantity);
+    modifier spendCredit(uint256 _quantity, uint256 _type) {
+        require(credits[msg.sender][_type] >= _quantity);
+        credits[msg.sender][_type] = SafeMath.sub(credits[msg.sender][_type], _quantity);
         _;
     }
 
@@ -217,7 +224,7 @@ contract ArianeeStore is Pausable {
      * @dev Public function to reserve ArianeeSmartAsset
      * @param _id uint256 id of the NFT
      */
-    function reserveToken(uint256 _id) public spendSmartAssetsCredit(1) {
+    function reserveToken(uint256 _id) public spendCredit(1, 0) {
         nonFungibleRegistry.reserveToken(_id);
     }
 
@@ -256,7 +263,7 @@ contract ArianeeStore is Pausable {
     
     
     function _dispatchRewardsAtHydrate(uint256 _tokenId, address _providerBrand) internal{
-        uint256 ariaToDispatch = creditHistory.getCreditPrice(msg.sender);
+        uint256 ariaToDispatch = creditHistory.getCreditPrice(msg.sender, 0);
         tokenFeePrice[_tokenId] = ariaToDispatch;
         acceptedToken.transferFrom(owner,protocolInfraAddress,(ariaToDispatch/100)*10);
         acceptedToken.transferFrom(owner,arianeeProjectAddress,(ariaToDispatch/100)*40);
@@ -268,6 +275,10 @@ contract ArianeeStore is Pausable {
         acceptedToken.transferFrom(owner,_providerOwner,(ariaToDispatch/100)*20);
         acceptedToken.transferFrom(owner,msg.sender,(ariaToDispatch/100)*10);
         delete tokenFeePrice[_tokenId];
+    }
+
+    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint) public spendCredit(1,1){
+        message.sendMessage(_tokenId, _uri, _imprint);
     }
 
     /**
