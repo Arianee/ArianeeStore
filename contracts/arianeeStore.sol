@@ -277,8 +277,8 @@ contract ArianeeStore is Pausable {
         delete tokenFeePrice[_tokenId];
     }
 
-    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint) public spendCredit(1,1){
-        message.sendMessage(_tokenId, _uri, _imprint);
+    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint, address _to) public spendCredit(1,1){
+        message.sendMessage(_tokenId, _uri, _imprint, _to);
     }
 
     /**
