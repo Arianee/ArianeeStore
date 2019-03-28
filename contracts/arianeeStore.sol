@@ -84,7 +84,12 @@ contract ArianeeCreditHistory {
 }
 
 contract ArianeeMessage {
-    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint) public;
+    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint, address _to) public returns(uint256);
+}
+
+contract ArianeeService {
+    function createService(uint256 _tokenId, string memory _uri, bytes32 _imprint) public returns(uint256);
+    function acceptService(uint256 _tokenId, uint256 serviceId) public;
 }
 
 contract ArianeeStore is Pausable {
@@ -95,8 +100,8 @@ contract ArianeeStore is Pausable {
     ERC20Interface public acceptedToken;
     ERC721Interface public nonFungibleRegistry;
     ArianeeCreditHistory public creditHistory;
-    ArianeeMessage public message;
-
+    ArianeeMessage public arianeeMessage;
+    ArianeeService public arianeeService;
 
     // Credits for each user for each service
     mapping(address => mapping(uint256 => uint256)) public credits;
@@ -136,8 +141,6 @@ contract ArianeeStore is Pausable {
         acceptedToken = ERC20Interface(address(_acceptedToken));
         nonFungibleRegistry = ERC721Interface(address(_nonFungibleRegistry));
         creditHistory = ArianeeCreditHistory(address(_creditHistoryAddress));
-        message = ArianeeMessage(address(_messageAddress));
-
     }
 
 
@@ -276,32 +279,48 @@ contract ArianeeStore is Pausable {
         acceptedToken.transferFrom(owner,msg.sender,(ariaToDispatch/100)*10);
         delete tokenFeePrice[_tokenId];
     }
-
-    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint, address _to) public spendCredit(1,1){
-        message.sendMessage(_tokenId, _uri, _imprint, _to);
+    
+    /** 
+     * @dev Public function that send a message to a NFT owner attached to a NFT.
+     * @param _tokenId token associated to the message
+     * @param _uri URI of the message
+     * @param _imprint of the message
+     * @param _to receiver of the message
+     * @param _providerBrand address of the provider of the interface.
+     */
+    function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint, address _to, address _providerBrand) public spendCredit(1,1){
+        require(msg.sender != _to);
+        uint256 _messageId = arianeeMessage.sendMessage(_tokenId, _uri, _imprint, _to);
+        _dispatchRewardsAtHydrate(_tokenId, _providerBrand, _messageId, 1);
     }
-
+    
     /**
      * @dev Public function to transfer Arias 
      * @param _to address address to send the Arias
      * @param _quantity uint256 quantity to send
      */
-    function transferAria(address _to, uint _quantity) public returns (bool){
-        // Transfer share amount for marketplace Owner.
-        return acceptedToken.transferFrom(
-            msg.sender,
-            _to,
-            _quantity
-        );
+    function readMessage(uint256 _tokenId, uint256 _messageId, address _providerOwner) public {
+        _dispatchRewardsAtRequest(_tokenId, _providerOwner, _messageId);
     }
 
     /**
      * Public function get the msg.sender arias balance
      */
-    function balanceOfAria() public view returns (uint){
-        // Transfer share amount for marketplace Owner.
-        return acceptedToken.balanceOf(msg.sender);
-    }
-
+     function createService(uint256 _tokenId, string memory _uri, bytes32 _imprint,  address _providerBrand) public spendCredit(1,2){
+        uint256 _serviceId = arianeeService.createService(_tokenId,  _uri, _imprint);
+        _dispatchRewardsAtHydrate(_tokenId, _providerBrand, _serviceId, 2);
+     }
+     
+     /**
+      * @dev Public function that accept a service an dispatch rewards.
+      * @notice Can only be called by an operator of the NFT.
+      * @param _tokenId id of the NFT.
+      * @param _serviceId id of the service.
+      * @param _providerOwner address of the provider of the interface
+      */
+     function acceptService(uint256 _tokenId, uint256 _serviceId, address _providerOwner) public {
+         arianeeService.acceptService(_tokenId, _serviceId);
+         _dispatchRewardsAtRequest(_tokenId, _providerOwner, _serviceId);
+     }
 
 }
