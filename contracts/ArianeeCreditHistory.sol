@@ -25,7 +25,7 @@ contract ArianeeCreditHistory is Ownable{
    * @dev public function that change the store contract address.
    * @notice Can only be called by the contract owner.
    */
-  function changeArianeeStoreAdress(address _newArianeeStoreAdress) onlyOwner() public{
+  function changeArianeeStoreAddress(address _newArianeeStoreAdress) onlyOwner() public{
       arianeeStoreAddress = _newArianeeStoreAdress;
   }
   
@@ -57,11 +57,12 @@ contract ArianeeCreditHistory is Ownable{
      */
     function getCreditPrice(address _spender, uint256 _type) public onlyStore() returns (uint256){
         uint256 _index = historyIndex[_spender][_type];
+        
         uint256 price = creditHistory[_spender][_type][_index].price;
         creditHistory[_spender][_type][_index].quantity = creditHistory[_spender][_type][_index].quantity-1;
         
         if(creditHistory[_spender][_type][_index].quantity == 0){
-            historyIndex[_spender][_type] = _index + 1;
+            historyIndex[_spender][_type] = historyIndex[_spender][_type] + 1;
         }
         
         return price;

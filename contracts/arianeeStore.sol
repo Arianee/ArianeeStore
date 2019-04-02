@@ -2,8 +2,8 @@ pragma solidity 0.5.1;
 
 import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
 import "@0xcert/ethereum-erc721-contracts/src/contracts/nf-token-metadata-enumerable.sol";
+import "@0xcert/ethereum-erc20-contracts/src/contracts/token.sol";
 
-import "./ERC900BasicStakeContract.sol";
 import "./Ownable.sol";
 // File: openzeppelin-zos/contracts/lifecycle/Pausable.sol
 
@@ -64,7 +64,7 @@ contract Pausable is Ownable {
  */
 contract ERC20Interface {
     function transferFrom(address from, address to, uint tokens) public returns (bool success);
-
+    function transfer(address to, uint tokens) public returns (bool success);
     function balanceOf(address owner) public view returns (uint256);
 }
 
@@ -72,8 +72,8 @@ contract ERC20Interface {
  * @title Interface for contracts conforming to ERC-721
  */
 contract ERC721Interface {
-    function reserveToken(uint256 id) public;
-    function reserveTokens(uint256 _first, uint256 _last) public;
+    function reserveToken(uint256 id, address _to) public;
+    function reserveTokens(uint256 _first, uint256 _last, address _to) public;
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey) public;
     function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken) public;
 }
@@ -81,6 +81,7 @@ contract ERC721Interface {
 contract ArianeeCreditHistory {
     function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) public;
     function getCreditPrice(address _spender, uint256 _type) public returns(uint256);
+    function arianeeStoreAddress() public returns(address);
 }
 
 contract ArianeeMessage {
@@ -111,7 +112,7 @@ contract ArianeeStore is Pausable {
     mapping(address => mapping(uint256 => uint256)) public credits;
 
     /**
-     * @dev Credits Price for each user for each service
+     * @dev Credits Price for each user for each service (0 = certificate, 1 = messages, 2 = service)
      */
     mapping(address => mapping(uint256 => uint256)) public creditsPricesPerAccount;
 
@@ -127,6 +128,8 @@ contract ArianeeStore is Pausable {
      * @dev Current exchange rate Aria/$
      */
     uint256 public ariaUSDExchange;
+    
+    mapping (uint8=>uint8) dispatchPercent;
     
     address authorizedExchangeAddress;
     address protocolInfraAddress;
@@ -244,21 +247,21 @@ contract ArianeeStore is Pausable {
      * @param _creditType uint256 credit type to buy
      * @param _quantity uint256 quantity to buy
      */
-    function buyCredit(uint256 _creditType, uint256 _quantity) public returns (bool) {
+    function buyCredit(uint256 _creditType, uint256 _quantity, address _to) public returns (bool) {
 
         uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
 
         // Transfer required token quantity to buy quantity credit
         require(acceptedToken.transferFrom(
                 msg.sender,
-                owner,
+                address(this),
                 tokens
             ));
         
-        creditHistory.addCreditHistory(msg.sender, creditPrices[_creditType], _quantity, _creditType);
+        creditHistory.addCreditHistory(_to, creditPrices[_creditType], _quantity, _creditType);
 
         // Update credit quantity
-        credits[msg.sender][_creditType] = SafeMath.add(credits[msg.sender][_creditType], _quantity);
+        credits[_to][_creditType] = SafeMath.add(credits[_to][_creditType], _quantity);
         
         return true;
     }
@@ -278,8 +281,8 @@ contract ArianeeStore is Pausable {
      * @param _quantity uint256 quantity of credit to spend
      */
     function spendSmartAssetsCreditFunction(uint256 _quantity) public returns (bool) {
-        require(credits[msg.sender][1] >= _quantity, "need more credits");
-        credits[msg.sender][1] = SafeMath.sub(credits[msg.sender][1], _quantity);
+        require(credits[msg.sender][0] >= _quantity, "need more credits");
+        credits[msg.sender][0] = SafeMath.sub(credits[msg.sender][0], _quantity);
         return true;
     }
 
@@ -287,8 +290,8 @@ contract ArianeeStore is Pausable {
      * @dev Public function to reserve ArianeeSmartAsset
      * @param _id uint256 id of the NFT
      */
-    function reserveToken(uint256 _id) public {
-        nonFungibleRegistry.reserveToken(_id);
+    function reserveToken(uint256 _id, address _to) public spendCredit(1,0){
+        nonFungibleRegistry.reserveToken(_id, _to);
     }
 
     /**
@@ -296,10 +299,10 @@ contract ArianeeStore is Pausable {
      * @param _first uint256 first ID to reserve
      * @param _last uint256 last ID to reserve
      */
-    function reserveTokens(uint256 _first, uint256 _last) public {
+    function reserveTokens(uint256 _first, uint256 _last, address _to) public {
         uint256 _idsNb = SafeMath.sub(_last, _first);
         spendSmartAssetsCreditFunction(_idsNb);
-        nonFungibleRegistry.reserveTokens(_first, _last);
+        nonFungibleRegistry.reserveTokens(_first, _last, _to);
     }
     
     /**
@@ -328,6 +331,14 @@ contract ArianeeStore is Pausable {
         nonFungibleRegistry.requestToken(_tokenId, _tokenKey, _keepRequestToken);
     }
     
+    function changeDispatchPercent(uint8 _percentInfra, uint8 _percentBrandsProvider, uint8 _percentOwnerProvider, uint8 _arianeeProject, uint8 _assetHolder) public onlyOwner(){
+        require(_percentInfra+_percentBrandsProvider+_percentOwnerProvider+_arianeeProject+_assetHolder == 100);
+        dispatchPercent[0] = _percentInfra;
+        dispatchPercent[1] = _percentBrandsProvider;
+        dispatchPercent[2] = _percentOwnerProvider;
+        dispatchPercent[3] = _arianeeProject;
+        dispatchPercent[4] = _assetHolder;
+    }
     
     /**
      * @dev Internal function that dispatch rewards at creation.
@@ -339,9 +350,9 @@ contract ArianeeStore is Pausable {
     function _dispatchRewardsAtHydrate(uint256 _tokenId, address _providerBrand, uint256 _transacId, uint256 _creditType) internal{
         uint256 ariaToDispatch = creditHistory.getCreditPrice(msg.sender, _creditType);
         tokenFeePrice[_tokenId][_transacId] = ariaToDispatch;
-        acceptedToken.transferFrom(owner,protocolInfraAddress,(ariaToDispatch/100)*10);
-        acceptedToken.transferFrom(owner,arianeeProjectAddress,(ariaToDispatch/100)*40);
-        acceptedToken.transferFrom(owner,_providerBrand,(ariaToDispatch/100)*20);    
+        acceptedToken.transfer(protocolInfraAddress,(ariaToDispatch/100)*dispatchPercent[0]);
+        acceptedToken.transfer(arianeeProjectAddress,(ariaToDispatch/100)*dispatchPercent[3]);
+        acceptedToken.transfer(_providerBrand,(ariaToDispatch/100)*dispatchPercent[1]);
     }
     
     /**
@@ -354,9 +365,9 @@ contract ArianeeStore is Pausable {
     function _dispatchRewardsAtRequest(uint256 _tokenId, address _providerOwner, uint256 _transacId) internal{
         uint256 ariaToDispatch = tokenFeePrice[_tokenId][_transacId];
         if(ariaToDispatch>0){
-            acceptedToken.transferFrom(owner,_providerOwner,(ariaToDispatch/100)*20);
-            acceptedToken.transferFrom(owner,msg.sender,(ariaToDispatch/100)*10);
-            delete tokenFeePrice[_tokenId][_transacId];    
+            acceptedToken.transfer(_providerOwner,(ariaToDispatch/100)*dispatchPercent[2]);
+            acceptedToken.transfer(msg.sender,(ariaToDispatch/100)*dispatchPercent[4]);
+            delete tokenFeePrice[_tokenId][_transacId];
         }
     }
     
@@ -407,6 +418,15 @@ contract ArianeeStore is Pausable {
      function acceptService(uint256 _tokenId, uint256 _serviceId, address _providerOwner) public {
          arianeeService.acceptService(_tokenId, _serviceId);
          _dispatchRewardsAtRequest(_tokenId, _providerOwner, _serviceId);
+     }
+     
+     /**
+      *
+      * 
+      */
+     function withdrawAria() onlyOwner() public{
+        require(address(this) != creditHistory.arianeeStoreAddress());
+        acceptedToken.transfer(owner,acceptedToken.balanceOf(address(this)));
      }
 
 }
