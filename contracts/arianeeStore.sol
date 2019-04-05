@@ -114,7 +114,7 @@ contract ArianeeStore is Pausable {
      * @dev Change address of the Arianee message contract.
      * @param _arianeeMessageAddress new address of the contract.
      */
-    function changeArianeeMessageAddress(address _arianeeMessageAddress) public onlyOwner() {
+    function setArianeeMessageAddress(address _arianeeMessageAddress) public onlyOwner() {
         arianeeMessage = ArianeeMessage(address(_arianeeMessageAddress));
     } 
     
@@ -122,7 +122,7 @@ contract ArianeeStore is Pausable {
      * @dev Change address of the Arianee service contract.
      * @param _arianeeServiceAddress new address of the contract
      */
-    function changeArianeeServiceAddress(address _arianeeServiceAddress) public onlyOwner() {
+    function setArianeeServiceAddress(address _arianeeServiceAddress) public onlyOwner() {
         arianeeService = ArianeeService(address(_arianeeServiceAddress));
     } 
     
@@ -285,7 +285,7 @@ contract ArianeeStore is Pausable {
      * @param _assetHolder Percent get by the asset owner.
      */
     
-    function changeDispatchPercent(uint8 _percentInfra, uint8 _percentBrandsProvider, uint8 _percentOwnerProvider, uint8 _arianeeProject, uint8 _assetHolder) public onlyOwner(){
+    function setDispatchPercent(uint8 _percentInfra, uint8 _percentBrandsProvider, uint8 _percentOwnerProvider, uint8 _arianeeProject, uint8 _assetHolder) public onlyOwner(){
         require(_percentInfra+_percentBrandsProvider+_percentOwnerProvider+_arianeeProject+_assetHolder == 100);
         dispatchPercent[0] = _percentInfra;
         dispatchPercent[1] = _percentBrandsProvider;
@@ -312,8 +312,8 @@ contract ArianeeStore is Pausable {
      */
     
     function _dispatchRewardsAtRequest(address _providerOwner, uint256 _reward) internal{
-            acceptedToken.transfer(_providerOwner,(_reward/100)*dispatchPercent[2]);
-            acceptedToken.transfer(msg.sender,(_reward/100)*dispatchPercent[4]);
+        acceptedToken.transfer(_providerOwner,(_reward/100)*dispatchPercent[2]);
+        acceptedToken.transfer(msg.sender,(_reward/100)*dispatchPercent[4]);
     }
     
     /** 
@@ -325,8 +325,8 @@ contract ArianeeStore is Pausable {
      * @param _providerBrand address of the provider of the interface.
      */
     function sendMessage(uint256 _tokenId, string memory _uri, bytes32 _imprint, address _to, address _providerBrand) public returns(uint256){
-        uint256 _reward = _spendSmartAssetsCreditFunction(1, 1);
         require(msg.sender != _to);
+        uint256 _reward = _spendSmartAssetsCreditFunction(1, 1);
         uint256 _messageId = arianeeMessage.sendMessage(_tokenId, _uri, _imprint, _to, _reward);
         _dispatchRewardsAtHydrate(_providerBrand,  _reward);
         return _messageId;
@@ -352,7 +352,7 @@ contract ArianeeStore is Pausable {
      * @param _providerBrand address of the provider of the interface.
      */
      function createService(uint256 _tokenId, string memory _uri, bytes32 _imprint,  address _providerBrand) public returns(uint256){
-         uint256 _reward = _spendSmartAssetsCreditFunction(2, 1);
+        uint256 _reward = _spendSmartAssetsCreditFunction(2, 1);
         uint256 _serviceId = arianeeService.createService(_tokenId,  _uri, _imprint, _reward);
         _dispatchRewardsAtHydrate(_providerBrand, _reward);
         return _serviceId;
@@ -366,8 +366,8 @@ contract ArianeeStore is Pausable {
       * @param _providerOwner address of the provider of the interface
       */
      function acceptService(uint256 _tokenId, uint256 _serviceId, address _providerOwner) public {
-         uint256 reward = arianeeService.acceptService(_tokenId, _serviceId);
-         _dispatchRewardsAtRequest(_providerOwner, reward);
+        uint256 reward = arianeeService.acceptService(_tokenId, _serviceId);
+        _dispatchRewardsAtRequest(_providerOwner, reward);
      }
      
      /**

@@ -29,7 +29,7 @@ contract ArianeeCreditHistory is Ownable{
    * @dev public function that change the store contract address.
    * @notice Can only be called by the contract owner.
    */
-  function changeArianeeStoreAddress(address _newArianeeStoreAdress) onlyOwner() public{
+  function setArianeeStoreAddress(address _newArianeeStoreAdress) onlyOwner() public{
       arianeeStoreAddress = _newArianeeStoreAdress;
   }
   
