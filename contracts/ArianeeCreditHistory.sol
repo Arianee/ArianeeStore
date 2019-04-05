@@ -1,13 +1,17 @@
 pragma solidity 0.5.1;
 
 import "@0xcert/ethereum-utils-contracts/src/contracts/permission/ownable.sol";
+import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
 
 contract ArianeeCreditHistory is Ownable{
     
+  using SafeMath for uint256;
     
   mapping(address => mapping(uint256=>CreditBuy[])) public creditHistory;
   
   mapping(address => mapping(uint256=>uint256)) public historyIndex;
+  
+  mapping(address => mapping(uint256=>uint256)) public totalCredits;
   
   address public arianeeStoreAddress;
   
@@ -45,6 +49,7 @@ contract ArianeeCreditHistory is Ownable{
       });
       
       creditHistory[_spender][_type].push(_creditBuy);
+      totalCredits[_spender][_type] = totalCredits[_spender][_type] + _quantity;
       
   }
 
@@ -55,14 +60,17 @@ contract ArianeeCreditHistory is Ownable{
      * @param _type type of credit.
      * @return price of the credit.
      */
-    function getCreditPrice(address _spender, uint256 _type) public onlyStore() returns (uint256){
+    function getCreditPrice(address _spender, uint256 _type, uint256 _quantity) public onlyStore() returns (uint256){
+        require(totalCredits[_spender][_type]>0);
         uint256 _index = historyIndex[_spender][_type];
+        require(creditHistory[_spender][_type][_index].quantity >= _quantity);
         
         uint256 price = creditHistory[_spender][_type][_index].price;
-        creditHistory[_spender][_type][_index].quantity = creditHistory[_spender][_type][_index].quantity-1;
+        creditHistory[_spender][_type][_index].quantity = SafeMath.sub(creditHistory[_spender][_type][_index].quantity, _quantity);
+        totalCredits[_spender][_type] = SafeMath.sub(totalCredits[_spender][_type], 1);
         
         if(creditHistory[_spender][_type][_index].quantity == 0){
-            historyIndex[_spender][_type] = historyIndex[_spender][_type] + 1;
+            historyIndex[_spender][_type] = SafeMath.add(historyIndex[_spender][_type], 1);
         }
         
         return price;
