@@ -49,55 +49,55 @@ contract ArianeeStore is Pausable {
      * @dev Mapping of the credit price in $cent.
      */
     mapping(uint256 => uint256) public creditPricesUSD;
-    
+
     /**
      * @dev Mapping of the credit price in Aria.
      */
     mapping(uint256 => uint256) public creditPrices;
-    
+
     /**
      * @dev Current exchange rate Aria/$
      */
     uint256 public ariaUSDExchange;
-    
+
     /**
      * @dev % of rewards dispatch.
      */
     mapping (uint8=>uint8) dispatchPercent;
-    
+
     address authorizedExchangeAddress;
     address protocolInfraAddress;
     address arianeeProjectAddress;
-    
-    
+
+
     mapping(uint256=>mapping(uint256=>uint256)) tokenFeePrice;
-    
-    
+
+
     /**
      * @dev This emits when a new address is set.
      */
-     event SetAddress(string _addressType, address _newAddress);
-     
+    event SetAddress(string _addressType, address _newAddress);
+
     /**
      * @dev This emits when a credit's price is changed (in USD)
      */
     event NewCreditPrice(uint256 _creditType, uint256 _price);
-      
+
     /**
      * @dev This emits when the Aria/USD price is changed.
      */
     event NewAriaUSDExchange(uint256 _ariaUSDExchange);
-     
+
     /**
      * @dev This emits when credits are buyed.
      */
     event CreditBuyed(address buyer, address _receiver, uint256 _creditType, uint256 quantity);
-     
+
     /**
      * @dev This emits when a new dispatch percent is set.
      */
     event NewDispatchPercent(uint8 _percentInfra, uint8 _percentBrandsProvider, uint8 _percentOwnerProvider, uint8 _arianeeProject, uint8 _assetHolder);
-    
+
     /**
      * @dev This emit when credits are spended.
      */
@@ -116,22 +116,22 @@ contract ArianeeStore is Pausable {
         uint256 _creditPricesUSD0,
         uint256 _creditPricesUSD1,
         uint256 _creditPricesUSD2
-        
+
     )
-    public 
+    public
     {
         acceptedToken = ERC20Interface(address(_acceptedToken));
         nonFungibleRegistry = ERC721Interface(address(_nonFungibleRegistry));
         creditHistory = ArianeeCreditHistory(address(_creditHistoryAddress));
-        
+
         ariaUSDExchange = _ariaUSDExchange;
         creditPricesUSD[0] = _creditPricesUSD0;
         creditPricesUSD[1] = _creditPricesUSD1;
         creditPricesUSD[2] = _creditPricesUSD2;
         _updateCreditPrice();
     }
-    
-    
+
+
     /**
      * @dev Change address of the authorized exchange address.
      * @notice This account is the only that can change the Aria/$ exchange rate.
@@ -140,7 +140,7 @@ contract ArianeeStore is Pausable {
         authorizedExchangeAddress = _authorizedExchangeAddress;
         emit SetAddress("authorizedExchange", _authorizedExchangeAddress);
     }
-    
+
     /**
      * @dev Change address of the protocol infrastructure.
      * @param _protocolInfraAddress new address of the protocol intfrastructure receiver.
@@ -149,7 +149,7 @@ contract ArianeeStore is Pausable {
         protocolInfraAddress = _protocolInfraAddress;
         emit SetAddress("protocolInfra", _protocolInfraAddress);
     }
-    
+
     /**
      * @dev Change address of the Arianee project address.
      * @param _arianeeProjectAddress new address of the Arianee project receiver.
@@ -165,27 +165,26 @@ contract ArianeeStore is Pausable {
      * @param _creditType uint256 credit type to change the price
      * @param _price uint256 new price
      */
-    function setCreditPrice(uint256 _creditType, uint256 _price) public onlyOwner() returns (bool) {
+    function setCreditPrice(uint256 _creditType, uint256 _price) public onlyOwner() {
         creditPricesUSD[_creditType] = _price;
         _updateCreditPrice();
-        
-       emit NewCreditPrice(_creditType, _price);
+
+        emit NewCreditPrice(_creditType, _price);
     }
-    
+
     /**
      * @dev Update Aria/USD change
      * @notice Can only be called by the authorized exchange address.
      * @param _ariaUSDExchange price of 1 $cent in aria.
     */
-    
     function setAriaUSDExchange(uint256 _ariaUSDExchange) public {
         require(msg.sender == authorizedExchangeAddress);
         ariaUSDExchange = _ariaUSDExchange;
         _updateCreditPrice();
-        
+
         emit NewAriaUSDExchange(_ariaUSDExchange);
     }
-    
+
     /**
      * @dev Internal function update creditPrice.
      * @notice creditPrice need to be >100
@@ -223,11 +222,11 @@ contract ArianeeStore is Pausable {
                 address(this),
                 tokens
             ));
-        
+
         creditHistory.addCreditHistory(_to, creditPrices[_creditType], _quantity, _creditType);
-        
+
         emit CreditBuyed(msg.sender, _to, _creditType, _quantity);
-        
+
     }
 
     /**
@@ -269,7 +268,7 @@ contract ArianeeStore is Pausable {
         _dispatchRewardsAtHydrate(_providerBrand, _reward);
     }
     /**
-     * @dev Public function for reqeust a nft and dispatch rewards.
+     * @dev Public function for request a nft and dispatch rewards.
      * @param _tokenId ID of the NFT to transfer.
      * @param _tokenKey String to encode to check transfer token access.
      * @param _keepRequestToken If false erase the access token of the NFT.
@@ -288,7 +287,7 @@ contract ArianeeStore is Pausable {
      * @param _arianeeProject Percent get by the Arianee fondation.
      * @param _assetHolder Percent get by the asset owner.
      */
-    
+
     function setDispatchPercent(uint8 _percentInfra, uint8 _percentBrandsProvider, uint8 _percentOwnerProvider, uint8 _arianeeProject, uint8 _assetHolder) public onlyOwner(){
         require(_percentInfra+_percentBrandsProvider+_percentOwnerProvider+_arianeeProject+_assetHolder == 100);
         dispatchPercent[0] = _percentInfra;
@@ -296,10 +295,10 @@ contract ArianeeStore is Pausable {
         dispatchPercent[2] = _percentOwnerProvider;
         dispatchPercent[3] = _arianeeProject;
         dispatchPercent[4] = _assetHolder;
-        
+
         emit NewDispatchPercent(_percentInfra, _percentBrandsProvider, _percentOwnerProvider, _arianeeProject, _assetHolder);
     }
-    
+
     /**
      * @dev Internal function that dispatch rewards at creation.
      * @param _providerBrand address of the provider of the interface.
@@ -310,27 +309,27 @@ contract ArianeeStore is Pausable {
         acceptedToken.transfer(arianeeProjectAddress,(_reward/100)*dispatchPercent[3]);
         acceptedToken.transfer(_providerBrand,(_reward/100)*dispatchPercent[1]);
     }
-    
+
     /**
      * @dev Internal function that dispatch rewards at client reception
      * @param _providerOwner address of the provider of the interface.
      * @param _reward reward for this token.
      */
-    
+
     function _dispatchRewardsAtRequest(address _providerOwner, uint256 _reward) internal{
         acceptedToken.transfer(_providerOwner,(_reward/100)*dispatchPercent[2]);
         acceptedToken.transfer(msg.sender,(_reward/100)*dispatchPercent[4]);
     }
-    
-     /**
-      * @dev Send all aria owned by this contract to the contract owner.
-      * @notice Can only be called by the owner.
-      * @notice Can only be called if the creditHistory contract is not using this store anymore.
-      * 
-      */
-     function withdrawAria() onlyOwner() public{
+
+    /**
+     * @dev Send all aria owned by this contract to the contract owner.
+     * @notice Can only be called by the owner.
+     * @notice Can only be called if the creditHistory contract is not using this store anymore.
+     *
+     */
+    function withdrawAria() onlyOwner() public{
         require(address(this) != creditHistory.arianeeStoreAddress());
         acceptedToken.transfer(owner,acceptedToken.balanceOf(address(this)));
-     }
+    }
 
 }
