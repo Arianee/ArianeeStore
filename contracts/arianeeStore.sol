@@ -22,7 +22,6 @@ contract ERC20Interface {
  */
 contract ERC721Interface {
     function reserveToken(uint256 id, address _to, uint256 _rewards) public;
-    function reserveTokens(uint256 _first, uint256 _last, address _to, uint256 _rewards) public;
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey) public returns(uint256);
     function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken) public returns(uint256);
     function rewards(uint256 _tokenId) public returns(uint256);
@@ -50,10 +49,12 @@ contract ArianeeStore is Pausable {
      * @dev Mapping of the credit price in $cent.
      */
     mapping(uint256 => uint256) public creditPricesUSD;
+    
     /**
      * @dev Mapping of the credit price in Aria.
      */
     mapping(uint256 => uint256) public creditPrices;
+    
     /**
      * @dev Current exchange rate Aria/$
      */
@@ -249,17 +250,6 @@ contract ArianeeStore is Pausable {
         nonFungibleRegistry.reserveToken(_id, _to, rewards);
     }
 
-    /**
-     * @dev Public function to reserve several ArianeeSmartAsset
-     * @param _first uint256 first ID to reserve
-     * @param _last uint256 last ID to reserve
-     */
-    function reserveTokens(uint256 _first, uint256 _last, address _to) public {
-        uint256 _idsNb = SafeMath.sub(_last, _first);
-        uint256 reward = _spendSmartAssetsCreditFunction(0, _idsNb);
-        nonFungibleRegistry.reserveTokens(_first, _last, _to, reward);
-    }
-    
     /**
      * @dev Public function that hydrate token and dispatch rewards.
      * @notice Reserve token if token not reserved.
