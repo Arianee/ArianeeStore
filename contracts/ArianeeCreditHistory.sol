@@ -49,7 +49,7 @@ contract ArianeeCreditHistory is Ownable{
       });
       
       creditHistory[_spender][_type].push(_creditBuy);
-      totalCredits[_spender][_type] = totalCredits[_spender][_type] + _quantity;
+      totalCredits[_spender][_type] = SafeMath.add(totalCredits[_spender][_type], _quantity);
       
   }
 
