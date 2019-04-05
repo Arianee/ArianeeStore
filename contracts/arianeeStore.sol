@@ -213,7 +213,7 @@ contract ArianeeStore is Pausable {
      * @param _quantity uint256 quantity to buy
      * @param _to receiver of the credits
      */
-    function buyCredit(uint256 _creditType, uint256 _quantity, address _to) public returns (bool) {
+    function buyCredit(uint256 _creditType, uint256 _quantity, address _to) public{
 
         uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
 
