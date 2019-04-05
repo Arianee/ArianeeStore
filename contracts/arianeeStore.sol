@@ -3,59 +3,8 @@ pragma solidity 0.5.1;
 import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
 import "@0xcert/ethereum-erc721-contracts/src/contracts/nf-token-metadata-enumerable.sol";
 import "@0xcert/ethereum-erc20-contracts/src/contracts/token.sol";
-
-import "./Ownable.sol";
-// File: openzeppelin-zos/contracts/lifecycle/Pausable.sol
-
-/**
- * @title Pausable
- * @dev Base contract which allows children to implement an emergency stop mechanism.
- */
-contract Pausable is Ownable {
-    event Pause();
-    event Unpause();
-
-    using SafeMath for uint256;
-
-    bool public paused = false;
-
-    constructor() public {
-        Ownable(msg.sender);
-    }
-
-
-    /**
-     * @dev Modifier to make a function callable only when the contract is not paused.
-     */
-    modifier whenNotPaused() {
-        require(!paused);
-        _;
-    }
-
-    /**
-     * @dev Modifier to make a function callable only when the contract is paused.
-     */
-    modifier whenPaused() {
-        require(paused);
-        _;
-    }
-
-    /**
-     * @dev called by the owner to pause, triggers stopped state
-     */
-    function pause() onlyOwner whenNotPaused public {
-        paused = true;
-        emit Pause();
-    }
-
-    /**
-     * @dev called by the owner to unpause, returns to normal state
-     */
-    function unpause() onlyOwner whenPaused public {
-        paused = false;
-        emit Unpause();
-    }
-}
+import "@0xcert/ethereum-utils-contracts/src/contracts/permission/ownable.sol";
+import "./Pausable.sol";
 
 // File: contracts/ArianeeStore.sol
 
@@ -296,7 +245,7 @@ contract ArianeeStore is Pausable {
      * @param _initialKeyIsRequestKey If true set initial key as request key.
      * @param _providerBrand address of the provider of the interface.
      */
-    function i(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public {
+    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public {
         uint256 _reward = nonFungibleRegistry.hydrateToken(_tokenId, _imprint, _uri, _encryptedInitialKey, _tokenRecoveryTimestamp, _initialKeyIsRequestKey);
         _dispatchRewardsAtHydrate(_providerBrand, _reward);
     }
