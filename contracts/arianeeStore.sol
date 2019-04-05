@@ -90,7 +90,11 @@ contract ArianeeStore is Pausable {
     constructor(
         ERC20 _acceptedToken,
         ERC721 _nonFungibleRegistry,
-        address _creditHistoryAddress
+        address _creditHistoryAddress,
+        uint256 _ariaUSDExchange,
+        uint256 _creditPricesUSD0,
+        uint256 _creditPricesUSD1,
+        uint256 _creditPricesUSD2
         
     )
     public 
@@ -98,6 +102,12 @@ contract ArianeeStore is Pausable {
         acceptedToken = ERC20Interface(address(_acceptedToken));
         nonFungibleRegistry = ERC721Interface(address(_nonFungibleRegistry));
         creditHistory = ArianeeCreditHistory(address(_creditHistoryAddress));
+        
+        ariaUSDExchange = _ariaUSDExchange;
+        creditPricesUSD[0] = _creditPricesUSD0;
+        creditPricesUSD[1] = _creditPricesUSD1;
+        creditPricesUSD[2] = _creditPricesUSD2;
+        _updateCreditPrice();
     }
     
     /**
@@ -168,9 +178,9 @@ contract ArianeeStore is Pausable {
      * @notice creditPrice need to be >100
      */
     function _updateCreditPrice() internal{
-        require(creditPricesUSD[0] * ariaUSDExchange > 100);
-        require(creditPricesUSD[1] * ariaUSDExchange > 100);
-        require(creditPricesUSD[2] * ariaUSDExchange > 100);
+        require(creditPricesUSD[0] * ariaUSDExchange >=100);
+        require(creditPricesUSD[1] * ariaUSDExchange >=100);
+        require(creditPricesUSD[2] * ariaUSDExchange >=100);
         creditPrices[0] = creditPricesUSD[0] * ariaUSDExchange;
         creditPrices[1] = creditPricesUSD[1] * ariaUSDExchange;
         creditPrices[2] = creditPricesUSD[2] * ariaUSDExchange;
