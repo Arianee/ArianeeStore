@@ -20,6 +20,11 @@ contract ArianeeCreditHistory is Ownable{
       uint256 quantity;
   }
   
+  /**
+   * @dev This emits when a new address is set.
+   */
+   event SetAddress(string _addressType, address _newAddress);
+  
    modifier onlyStore(){
         require(msg.sender == arianeeStoreAddress, 'not called by store');
         _;
@@ -31,6 +36,7 @@ contract ArianeeCreditHistory is Ownable{
    */
   function setArianeeStoreAddress(address _newArianeeStoreAdress) onlyOwner() public{
       arianeeStoreAddress = _newArianeeStoreAdress;
+      emit SetAddress("arianeeStore", _newArianeeStoreAdress);
   }
   
   /**

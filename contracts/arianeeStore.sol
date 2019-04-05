@@ -70,6 +70,37 @@ contract ArianeeStore is Pausable {
     
     
     mapping(uint256=>mapping(uint256=>uint256)) tokenFeePrice;
+    
+    
+    /**
+     * @dev This emits when a new address is set.
+     */
+     event SetAddress(string _addressType, address _newAddress);
+     
+    /**
+     * @dev This emits when a credit's price is changed (in USD)
+     */
+    event NewCreditPrice(uint256 _creditType, uint256 _price);
+      
+    /**
+     * @dev This emits when the Aria/USD price is changed.
+     */
+    event NewAriaUSDExchange(uint256 _ariaUSDExchange);
+     
+    /**
+     * @dev This emits when credits are buyed.
+     */
+    event CreditBuyed(address buyer, address _receiver, uint256 _creditType, uint256 quantity);
+     
+    /**
+     * @dev This emits when a new dispatch percent is set.
+     */
+    event NewDispatchPercent(uint8 _percentInfra, uint8 _percentBrandsProvider, uint8 _percentOwnerProvider, uint8 _arianeeProject, uint8 _assetHolder);
+    
+    /**
+     * @dev This emit when credits are spended.
+     */
+    event CreditSpended(uint256 _type,uint256 _quantity);
 
     /**
      * @dev Initialize this contract. Acts as a constructor
@@ -106,6 +137,7 @@ contract ArianeeStore is Pausable {
      */
     function setAuthorizedExchangeAddress(address _authorizedExchangeAddress) public onlyOwner(){
         authorizedExchangeAddress = _authorizedExchangeAddress;
+        emit SetAddress("authorizedExchange", _authorizedExchangeAddress);
     }
     
     /**
@@ -114,6 +146,7 @@ contract ArianeeStore is Pausable {
      */
     function setProtocolInfraAddress(address _protocolInfraAddress) public onlyOwner() {
         protocolInfraAddress = _protocolInfraAddress;
+        emit SetAddress("protocolInfra", _protocolInfraAddress);
     }
     
     /**
@@ -122,6 +155,7 @@ contract ArianeeStore is Pausable {
      */
     function setArianeeProjectAddress(address _arianeeProjectAddress) public onlyOwner() {
         arianeeProjectAddress = _arianeeProjectAddress;
+        emit SetAddress("arianeeProject", _arianeeProjectAddress);
     }
 
     /**
@@ -133,6 +167,8 @@ contract ArianeeStore is Pausable {
     function setCreditPrice(uint256 _creditType, uint256 _price) public onlyOwner() returns (bool) {
         creditPricesUSD[_creditType] = _price;
         _updateCreditPrice();
+        
+       emit NewCreditPrice(_creditType, _price);
     }
     
     /**
@@ -145,6 +181,8 @@ contract ArianeeStore is Pausable {
         require(msg.sender == authorizedExchangeAddress);
         ariaUSDExchange = _ariaUSDExchange;
         _updateCreditPrice();
+        
+        emit NewAriaUSDExchange(_ariaUSDExchange);
     }
     
     /**
@@ -187,7 +225,8 @@ contract ArianeeStore is Pausable {
         
         creditHistory.addCreditHistory(_to, creditPrices[_creditType], _quantity, _creditType);
         
-        return true;
+        emit CreditBuyed(msg.sender, _to, _creditType, _quantity);
+        
     }
 
     /**
@@ -196,6 +235,7 @@ contract ArianeeStore is Pausable {
      */
     function _spendSmartAssetsCreditFunction(uint256 _type, uint256 _quantity) internal returns (uint256) {
         uint256 rewards = creditHistory.getCreditPrice(msg.sender, _type, _quantity);
+        emit CreditSpended(_type, _quantity);
         return rewards;
     }
 
@@ -266,6 +306,8 @@ contract ArianeeStore is Pausable {
         dispatchPercent[2] = _percentOwnerProvider;
         dispatchPercent[3] = _arianeeProject;
         dispatchPercent[4] = _assetHolder;
+        
+        emit NewDispatchPercent(_percentInfra, _percentBrandsProvider, _percentOwnerProvider, _arianeeProject, _assetHolder);
     }
     
     /**
