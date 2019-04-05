@@ -25,6 +25,7 @@ contract ERC721Interface {
     function reserveTokens(uint256 _first, uint256 _last, address _to, uint256 _rewards) public;
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey) public returns(uint256);
     function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken) public returns(uint256);
+    function rewards(uint256 _tokenId) public returns(uint256);
 }
 
 contract ArianeeCreditHistory {
@@ -237,6 +238,7 @@ contract ArianeeStore is Pausable {
     
     /**
      * @dev Public function that hydrate token and dispatch rewards.
+     * @notice Reserve token if token not reserved.
      * @param _tokenId ID of the NFT to modify.
      * @param _imprint Proof of the certification.
      * @param _uri URI of the JSON certification.
@@ -246,6 +248,9 @@ contract ArianeeStore is Pausable {
      * @param _providerBrand address of the provider of the interface.
      */
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public {
+        if(nonFungibleRegistry.rewards(_tokenId) == 0){
+            reserveToken(_tokenId, msg.sender);
+        }
         uint256 _reward = nonFungibleRegistry.hydrateToken(_tokenId, _imprint, _uri, _encryptedInitialKey, _tokenRecoveryTimestamp, _initialKeyIsRequestKey);
         _dispatchRewardsAtHydrate(_providerBrand, _reward);
     }
