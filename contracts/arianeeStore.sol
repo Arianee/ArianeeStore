@@ -199,11 +199,11 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Public function send the price a of a credit
+     * @dev Public function send the price a of a credit in aria
      * @param _creditType uint256
      */
     function getCreditPrice(uint256 _creditType) public view returns (uint256) {
-        return creditPricesUSD[_creditType];
+        return creditPrices[_creditType];
     }
 
     /**
