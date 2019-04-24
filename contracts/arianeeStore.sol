@@ -331,5 +331,13 @@ contract ArianeeStore is Pausable {
         require(address(this) != creditHistory.arianeeStoreAddress());
         acceptedToken.transfer(owner,acceptedToken.balanceOf(address(this)));
     }
+    
+    /**
+     * 
+     */
+    function sendAriasToNewStore() onlyOwner() public{
+        require(address(this) != creditHistory.arianeeStoreAddress());
+        acceptedToken.transfer(creditHistory.arianeeStoreAddress(),acceptedToken.balanceOf(address(this)));
+    }
 
 }
