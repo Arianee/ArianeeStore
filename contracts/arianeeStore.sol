@@ -24,7 +24,7 @@ contract ERC721Interface {
     function reserveToken(uint256 id, address _to, uint256 _rewards) public;
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey) public returns(uint256);
     function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken) public returns(uint256);
-    function rewards(uint256 _tokenId) public returns(uint256);
+    function ownerOf(uint256 _tokenId) public returns(address);
 }
 
 contract ArianeeCreditHistory {
@@ -48,12 +48,12 @@ contract ArianeeStore is Pausable {
     /**
      * @dev Mapping of the credit price in $cent.
      */
-    mapping(uint256 => uint256) public creditPricesUSD;
+    mapping(uint256 => uint256) internal creditPricesUSD;
 
     /**
      * @dev Mapping of the credit price in Aria.
      */
-    mapping(uint256 => uint256) public creditPrices;
+    mapping(uint256 => uint256) internal creditPrices;
 
     /**
      * @dev Current exchange rate Aria/$
@@ -63,15 +63,11 @@ contract ArianeeStore is Pausable {
     /**
      * @dev % of rewards dispatch.
      */
-    mapping (uint8=>uint8) dispatchPercent;
+    mapping (uint8=>uint8) internal dispatchPercent;
 
     address authorizedExchangeAddress;
     address protocolInfraAddress;
     address arianeeProjectAddress;
-
-
-    mapping(uint256=>mapping(uint256=>uint256)) tokenFeePrice;
-
 
     /**
      * @dev This emits when a new address is set.
@@ -261,7 +257,7 @@ contract ArianeeStore is Pausable {
      * @param _providerBrand address of the provider of the interface.
      */
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public {
-        if(nonFungibleRegistry.rewards(_tokenId) == 0){
+        if(nonFungibleRegistry.ownerOf(_tokenId) == address(0)){
             reserveToken(_tokenId, msg.sender);
         }
         uint256 _reward = nonFungibleRegistry.hydrateToken(_tokenId, _imprint, _uri, _encryptedInitialKey, _tokenRecoveryTimestamp, _initialKeyIsRequestKey);
@@ -333,11 +329,34 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * 
+     * @notice Send all aria to the new store.
+     * @dev Can only be called by the owner.
      */
     function sendAriasToNewStore() onlyOwner() public{
         require(address(this) != creditHistory.arianeeStoreAddress());
-        acceptedToken.transfer(creditHistory.arianeeStoreAddress(),acceptedToken.balanceOf(address(this)));
+        acceptedToken.transfer(address(creditHistory.arianeeStoreAddress()),acceptedToken.balanceOf(address(this)));
+    }
+    
+    /**
+     * @notice The USD credit price per type.
+     * @param _creditType for which we want the USD price.
+     * @return price in USD.
+     */
+    function creditPriceUSD(uint256 _creditType) external view returns(uint256 _creditPriceUSD){
+        _creditPriceUSD = creditPricesUSD[_creditType];
+    }
+    
+    /**
+     * @notice % of dispatch for rewards
+     * @param _receiver for which we want the % of rewards.
+     * @return % of rewards.
+     */
+    function percentOfDispatch(uint8 _receiver) external view returns(uint8 _percent){
+        _percent = dispatchPercent[_receiver];
+    }
+    
+    function canTransfer(address _to,address _from,uint256 _tokenId) external pure returns(bool){
+        return true;
     }
 
 }

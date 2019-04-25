@@ -7,11 +7,11 @@ contract ArianeeCreditHistory is Ownable{
 
     using SafeMath for uint256;
 
-    mapping(address => mapping(uint256=>CreditBuy[])) public creditHistory;
+    mapping(address => mapping(uint256=>CreditBuy[])) internal creditHistory;
 
-    mapping(address => mapping(uint256=>uint256)) public historyIndex;
+    mapping(address => mapping(uint256=>uint256)) internal historyIndex;
 
-    mapping(address => mapping(uint256=>uint256)) public totalCredits;
+    mapping(address => mapping(uint256=>uint256)) internal totalCredits;
 
     address public arianeeStoreAddress;
 
@@ -67,7 +67,7 @@ contract ArianeeCreditHistory is Ownable{
      * @return price of the credit.
      */
     function getCreditPrice(address _spender, uint256 _type, uint256 _quantity) public onlyStore() returns (uint256){
-        require(totalCredits[_spender][_type]>0);
+        require(totalCredits[_spender][_type]>0, "No credit of that type");
         uint256 _index = historyIndex[_spender][_type];
         require(creditHistory[_spender][_type][_index].quantity >= _quantity);
 
@@ -80,7 +80,40 @@ contract ArianeeCreditHistory is Ownable{
         }
 
         return price;
-
     }
+    
+     /**
+       * @notice Give a specific credit history for a given spender, and type.
+       * @param _spender for which we want the credit history.
+       * @param _type of the credit for which we want the history.
+       * @param _index of the credit for which we want the history.
+       * @return Credit history.
+       */
+      function userCreditHistory(address _spender, uint256 _type, uint256 _index) external view returns(uint256 _price, uint256 _quantity){
+          _price = creditHistory[_spender][_type][_index].price;
+          _quantity = creditHistory[_spender][_type][_index].quantity;
+      }  
+      
+      /**
+       * @notice Get the actual index for a spender and a credit type.
+       * @param _spender for which we want the credit history.
+       * @param _type of the credit for which we want the history.
+       * @return Current index.
+       */
+      function userIndex(address _spender, uint256 _type) external view returns(uint256 _historyIndex){
+          _historyIndex = historyIndex[_spender][_type];
+      }
+      
+      /**
+       * @notice Give the total balance of credit for a spender.
+       * @param _spender for which we want the credit history.
+       * @param _type of the credit for which we want the history.
+       * @return Balance of the spender.
+       */
+      function balanceOf(address _spender, uint256 _type) external view returns(uint256 _totalCredits){
+          _totalCredits = totalCredits[_spender][_type];
+      }
+    
+    
 
 }
