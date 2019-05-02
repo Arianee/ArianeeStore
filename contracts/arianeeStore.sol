@@ -323,11 +323,22 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * @dev Send all aria to the new store.
+     * @dev Get all Arias from the previous store.
      * @dev Can only be called by the owner.
+     * @param _oldStoreAddress address of the previous store.
      */
-    function sendAriasToNewStore() onlyOwner() public{
+    function getAriaFromOldStore(address _oldStoreAddress) onlyOwner() public{
+        ArianeeStore oldStore = ArianeeStore(address(_oldStoreAddress));
+        oldStore.withdrawArias();
+    }
+    
+    /**
+     * @dev Withdraw all arias to the new store.
+     * @dev Can only be called by the new store.
+     */
+    function withdrawArias() external{
         require(address(this) != creditHistory.arianeeStoreAddress());
+        require(msg.sender == creditHistory.arianeeStoreAddress());
         acceptedToken.transfer(address(creditHistory.arianeeStoreAddress()),acceptedToken.balanceOf(address(this)));
     }
     
@@ -354,7 +365,7 @@ contract ArianeeStore is Pausable {
      * @notice not used for now.
      * @param _to Receiver of the NFT.
      * @param _from Actual owner of the NFT.
-     * @param _tokenId id of the NFT.
+     * @param _tokenId id of the
      * @return true.
      */
     function canTransfer(address _to,address _from,uint256 _tokenId) external pure returns(bool){
