@@ -27,6 +27,9 @@ contract ERC721Interface {
     function ownerOf(uint256 _tokenId) public returns(address);
 }
 
+/**
+ * @title Interface to interact with ArianneCreditHistory
+ */
 contract ArianeeCreditHistory {
     function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) public;
     function getCreditPrice(address _spender, uint256 _type, uint256 _quantity) public returns(uint256);
@@ -64,7 +67,10 @@ contract ArianeeStore is Pausable {
      * @dev % of rewards dispatch.
      */
     mapping (uint8=>uint8) internal dispatchPercent;
-
+    
+    /**
+     * @dev Address needed in contract execution.
+     */
     address authorizedExchangeAddress;
     address protocolInfraAddress;
     address arianeeProjectAddress;
@@ -326,7 +332,7 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * @notice The USD credit price per type.
+     * @dev The USD credit price per type.
      * @param _creditType for which we want the USD price.
      * @return price in USD.
      */
@@ -335,7 +341,7 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * @notice % of dispatch for rewards
+     * @dev dispatch for rewards.
      * @param _receiver for which we want the % of rewards.
      * @return % of rewards.
      */
@@ -343,6 +349,14 @@ contract ArianeeStore is Pausable {
         _percent = dispatchPercent[_receiver];
     }
     
+    /**
+     * @dev Allow or not a transfer in the SmartAsset contract.
+     * @notice not used for now.
+     * @param _to Receiver of the NFT.
+     * @param _from Actual owner of the NFT.
+     * @param _tokenId id of the NFT.
+     * @return true.
+     */
     function canTransfer(address _to,address _from,uint256 _tokenId) external pure returns(bool){
         return true;
     }
