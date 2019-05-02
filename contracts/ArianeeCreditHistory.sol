@@ -4,15 +4,27 @@ import "@0xcert/ethereum-utils-contracts/src/contracts/permission/ownable.sol";
 import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
 
 contract ArianeeCreditHistory is Ownable{
-
+    
     using SafeMath for uint256;
-
+    
+    /**
+     * @dev Mapping from address to array of creditHistory by type of credit.
+     */
     mapping(address => mapping(uint256=>CreditBuy[])) internal creditHistory;
 
+    /**
+     * @dev Mapping from address to creditHistory index by type of the credit.
+     */
     mapping(address => mapping(uint256=>uint256)) internal historyIndex;
 
+    /**
+     * @dev Mapping from address to totalCredit by type of the credit.
+     */
     mapping(address => mapping(uint256=>uint256)) internal totalCredits;
 
+    /**
+     * @dev Address of the actual store address.
+     */
     address public arianeeStoreAddress;
 
     struct CreditBuy{
