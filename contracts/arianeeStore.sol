@@ -311,25 +311,13 @@ contract ArianeeStore is Pausable {
      * @param _providerOwner address of the provider of the interface.
      * @param _reward reward for this token.
      */
-
     function _dispatchRewardsAtRequest(address _providerOwner, uint256 _reward) internal{
         acceptedToken.transfer(_providerOwner,(_reward/100)*dispatchPercent[2]);
         acceptedToken.transfer(msg.sender,(_reward/100)*dispatchPercent[4]);
     }
-
-    /**
-     * @dev Send all aria owned by this contract to the contract owner.
-     * @notice Can only be called by the owner.
-     * @notice Can only be called if the creditHistory contract is not using this store anymore.
-     *
-     */
-    function withdrawAria() onlyOwner() public{
-        require(address(this) != creditHistory.arianeeStoreAddress());
-        acceptedToken.transfer(owner,acceptedToken.balanceOf(address(this)));
-    }
     
     /**
-     * @notice Send all aria to the new store.
+     * @dev Send all aria to the new store.
      * @dev Can only be called by the owner.
      */
     function sendAriasToNewStore() onlyOwner() public{
