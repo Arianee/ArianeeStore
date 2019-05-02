@@ -214,7 +214,7 @@ contract ArianeeStore is Pausable {
      * @param _quantity uint256 quantity to buy
      * @param _to receiver of the credits
      */
-    function buyCredit(uint256 _creditType, uint256 _quantity, address _to) public{
+    function buyCredit(uint256 _creditType, uint256 _quantity, address _to) public whenNotPaused(){
 
         uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
 
@@ -246,7 +246,7 @@ contract ArianeeStore is Pausable {
      * @param _id uint256 id of the NFT
      * @param _to address receiver of the token
      */
-    function reserveToken(uint256 _id, address _to) public {
+    function reserveToken(uint256 _id, address _to) public whenNotPaused(){
         uint256 rewards = _spendSmartAssetsCreditFunction(0, 1);
         nonFungibleRegistry.reserveToken(_id, _to, rewards);
     }
@@ -262,7 +262,7 @@ contract ArianeeStore is Pausable {
      * @param _initialKeyIsRequestKey If true set initial key as request key.
      * @param _providerBrand address of the provider of the interface.
      */
-    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public {
+    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public whenNotPaused(){
         if(nonFungibleRegistry.ownerOf(_tokenId) == address(0)){
             reserveToken(_tokenId, msg.sender);
         }
@@ -276,7 +276,7 @@ contract ArianeeStore is Pausable {
      * @param _keepRequestToken If false erase the access token of the NFT.
      * @param _providerOwner address of the provider of the interface.
      */
-    function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken, address _providerOwner) public {
+    function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken, address _providerOwner) public whenNotPaused(){
         uint256 _reward = nonFungibleRegistry.requestToken(_tokenId, _tokenKey, _keepRequestToken);
         _dispatchRewardsAtRequest(_providerOwner, _reward);
     }
