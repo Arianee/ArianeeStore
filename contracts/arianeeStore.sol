@@ -24,7 +24,7 @@ contract ERC721Interface {
     function reserveToken(uint256 id, address _to, uint256 _rewards) public;
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey) public returns(uint256);
     function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken) public returns(uint256);
-    function ownerOf(uint256 _tokenId) public returns(address);
+    function getRewards(uint256 _tokenId) external view returns(uint256);
 }
 
 /**
@@ -263,7 +263,7 @@ contract ArianeeStore is Pausable {
      * @param _providerBrand address of the provider of the interface.
      */
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public whenNotPaused(){
-        if(nonFungibleRegistry.ownerOf(_tokenId) == address(0)){
+        if(nonFungibleRegistry.getRewards(_tokenId) == 0){
             reserveToken(_tokenId, msg.sender);
         }
         uint256 _reward = nonFungibleRegistry.hydrateToken(_tokenId, _imprint, _uri, _encryptedInitialKey, _tokenRecoveryTimestamp, _initialKeyIsRequestKey);
