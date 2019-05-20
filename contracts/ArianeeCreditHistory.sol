@@ -72,13 +72,13 @@ Ownable
   }
 
   /**
-   * @dev Public function that return the price of the oldest non spended credit.
+   * @dev Public function that consume a given quantity of credit and return the price of the oldest non spent credit.
    * @notice Can only be called by the store.
    * @param _spender address of the buyer.
    * @param _type type of credit.
    * @return price of the credit.
    */
-  function getCreditPrice(address _spender, uint256 _type, uint256 _quantity) public onlyStore() returns (uint256){
+  function consumeCredits(address _spender, uint256 _type, uint256 _quantity) public onlyStore() returns (uint256){
       require(totalCredits[_spender][_type]>0, "No credit of that type");
       uint256 _index = historyIndex[_spender][_type];
       require(creditHistory[_spender][_type][_index].quantity >= _quantity);

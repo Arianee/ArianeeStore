@@ -32,7 +32,7 @@ contract ERC721Interface {
  */
 contract ArianeeCreditHistory {
     function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) public;
-    function getCreditPrice(address _spender, uint256 _type, uint256 _quantity) public returns(uint256);
+    function consumeCredits(address _spender, uint256 _type, uint256 _quantity) public returns(uint256);
     function arianeeStoreAddress() public returns(address);
 }
 
@@ -236,7 +236,7 @@ contract ArianeeStore is Pausable {
      * @param _type credit type used.
      */
     function _spendSmartAssetsCreditFunction(uint256 _type, uint256 _quantity) internal returns (uint256) {
-        uint256 rewards = creditHistory.getCreditPrice(msg.sender, _type, _quantity);
+        uint256 rewards = creditHistory.consumeCredits(msg.sender, _type, _quantity);
         emit CreditSpended(_type, _quantity);
         return rewards;
     }
