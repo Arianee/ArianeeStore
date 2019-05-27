@@ -22,8 +22,8 @@ contract ERC20Interface {
  */
 contract ERC721Interface {
     function reserveToken(uint256 id, address _to, uint256 _rewards) public;
-    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _owner) public returns(uint256);
-    function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken, address _newOwner) public returns(uint256);
+    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, address _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _owner) public returns(uint256);
+    function requestToken(uint256 _tokenId, bytes32 _tokenKey, bool _keepRequestToken, address _newOwner, bytes memory _signature) public returns(uint256);
     function getRewards(uint256 _tokenId) external view returns(uint256);
 }
 
@@ -262,7 +262,7 @@ contract ArianeeStore is Pausable {
      * @param _initialKeyIsRequestKey If true set initial key as request key.
      * @param _providerBrand address of the provider of the interface.
      */
-    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, bytes32 _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public whenNotPaused(){
+    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, address _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public whenNotPaused(){
         if(nonFungibleRegistry.getRewards(_tokenId) == 0){
             reserveToken(_tokenId, msg.sender);
         }
@@ -276,8 +276,8 @@ contract ArianeeStore is Pausable {
      * @param _keepRequestToken If false erase the access token of the NFT.
      * @param _providerOwner address of the provider of the interface.
      */
-    function requestToken(uint256 _tokenId, string memory _tokenKey, bool _keepRequestToken, address _providerOwner) public whenNotPaused(){
-        uint256 _reward = nonFungibleRegistry.requestToken(_tokenId, _tokenKey, _keepRequestToken, msg.sender);
+    function requestToken(uint256 _tokenId, bytes32 _tokenKey, bool _keepRequestToken, address _providerOwner, bytes memory _signature) public whenNotPaused(){
+        uint256 _reward = nonFungibleRegistry.requestToken(_tokenId, _tokenKey, _keepRequestToken, msg.sender, _signature);
         _dispatchRewardsAtRequest(_providerOwner, _reward);
     }
     /**
