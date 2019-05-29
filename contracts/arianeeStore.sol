@@ -23,7 +23,7 @@ contract ERC20Interface {
 contract ERC721Interface {
     function reserveToken(uint256 id, address _to, uint256 _rewards) public;
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, address _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _owner) public returns(uint256);
-    function requestToken(uint256 _tokenId, bytes32 _tokenKey, bool _keepRequestToken, address _newOwner, bytes memory _signature) public returns(uint256);
+    function requestToken(uint256 _tokenId, bytes32 _hash, bool _keepRequestToken, address _newOwner, bytes memory _signature) public returns(uint256);
     function getRewards(uint256 _tokenId) external view returns(uint256);
 }
 
@@ -272,12 +272,12 @@ contract ArianeeStore is Pausable {
     /**
      * @dev Public function for request a nft and dispatch rewards.
      * @param _tokenId ID of the NFT to transfer.
-     * @param _tokenKey String to encode to check transfer token access.
+     * @param _hash Hash of tokenId + newOwner address.
      * @param _keepRequestToken If false erase the access token of the NFT.
      * @param _providerOwner address of the provider of the interface.
      */
-    function requestToken(uint256 _tokenId, bytes32 _tokenKey, bool _keepRequestToken, address _providerOwner, bytes memory _signature) public whenNotPaused(){
-        uint256 _reward = nonFungibleRegistry.requestToken(_tokenId, _tokenKey, _keepRequestToken, msg.sender, _signature);
+    function requestToken(uint256 _tokenId, bytes32 _hash, bool _keepRequestToken, address _providerOwner, bytes memory _signature) public whenNotPaused(){
+        uint256 _reward = nonFungibleRegistry.requestToken(_tokenId, _hash, _keepRequestToken, msg.sender, _signature);
         _dispatchRewardsAtRequest(_providerOwner, _reward);
     }
     /**
