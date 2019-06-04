@@ -1,13 +1,5 @@
 pragma solidity 0.5.6;
 
-import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
-import "@0xcert/ethereum-erc721-contracts/src/contracts/nf-token-metadata-enumerable.sol";
-import "@0xcert/ethereum-erc20-contracts/src/contracts/token.sol";
-import "@0xcert/ethereum-utils-contracts/src/contracts/permission/ownable.sol";
-import "./Pausable.sol";
-
-// File: contracts/ArianeeStore.sol
-
 /**
  * @title Interface for contracts conforming to ERC-20
  */
@@ -16,6 +8,7 @@ contract ERC20Interface {
     function transfer(address to, uint tokens) public returns (bool success);
     function balanceOf(address owner) public view returns (uint256);
 }
+
 
 /**
  * @title Interface for contracts conforming to ERC-721
@@ -27,6 +20,7 @@ contract ERC721Interface {
     function getRewards(uint256 _tokenId) external view returns(uint256);
 }
 
+
 /**
  * @title Interface to interact with ArianneCreditHistory
  */
@@ -37,6 +31,13 @@ contract ArianeeCreditHistory {
 }
 
 
+import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
+import "@0xcert/ethereum-erc721-contracts/src/contracts/nf-token-metadata-enumerable.sol";
+import "@0xcert/ethereum-erc20-contracts/src/contracts/token.sol";
+import "@0xcert/ethereum-utils-contracts/src/contracts/permission/ownable.sol";
+import "./Pausable.sol";
+
+/// @title Contract managing the Arianee economy.
 contract ArianeeStore is Pausable {
     using SafeMath for uint256;
     using AddressUtils for address;
@@ -135,8 +136,9 @@ contract ArianeeStore is Pausable {
 
 
     /**
-     * @dev Change address of the authorized exchange address.
+     * @notice Change address of the authorized exchange address.
      * @notice This account is the only that can change the Aria/$ exchange rate.
+     * @param _authorizedExchangeAddress new address of the authorized echange address.
      */
     function setAuthorizedExchangeAddress(address _authorizedExchangeAddress) public onlyOwner(){
         authorizedExchangeAddress = _authorizedExchangeAddress;
@@ -144,7 +146,7 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Change address of the protocol infrastructure.
+     * @notice Change address of the protocol infrastructure.
      * @param _protocolInfraAddress new address of the protocol intfrastructure receiver.
      */
     function setProtocolInfraAddress(address _protocolInfraAddress) public onlyOwner() {
@@ -153,7 +155,7 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Change address of the Arianee project address.
+     * @notice Change address of the Arianee project address.
      * @param _arianeeProjectAddress new address of the Arianee project receiver.
      */
     function setArianeeProjectAddress(address _arianeeProjectAddress) public onlyOwner() {
@@ -162,8 +164,8 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Public function change the price of a credit type
-     * @dev Can only be called by the owner of the contract
+     * @notice Public function change the price of a credit type
+     * @notice Can only be called by the owner of the contract
      * @param _creditType uint256 credit type to change the price
      * @param _price uint256 new price
      */
@@ -175,7 +177,7 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Update Aria/USD change
+     * @notice Update Aria/USD change
      * @notice Can only be called by the authorized exchange address.
      * @param _ariaUSDExchange price of 1 $cent in aria.
     */
@@ -201,15 +203,16 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Public function send the price a of a credit in aria
+     * @notice Send the price a of a credit in aria
      * @param _creditType uint256
+     * @return returne the price of the credit type.
      */
     function getCreditPrice(uint256 _creditType) public view returns (uint256) {
         return creditPrices[_creditType];
     }
 
     /**
-     * @dev Public function to buy new credit against Aria
+     * @notice Buy new credit against Aria
      * @param _creditType uint256 credit type to buy
      * @param _quantity uint256 quantity to buy
      * @param _to receiver of the credits
@@ -232,8 +235,9 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Public function to spend credits
+     * @dev Spend credits
      * @param _type credit type used.
+     * @param _quantity of credit to spend.
      */
     function _spendSmartAssetsCreditFunction(uint256 _type, uint256 _quantity) internal returns (uint256) {
         uint256 rewards = creditHistory.consumeCredits(msg.sender, _type, _quantity);
@@ -242,7 +246,7 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Public function to reserve ArianeeSmartAsset
+     * @notice Reserve ArianeeSmartAsset
      * @param _id uint256 id of the NFT
      * @param _to address receiver of the token
      */
@@ -252,7 +256,7 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Public function that hydrate token and dispatch rewards.
+     * @notice Hydrate token and dispatch rewards.
      * @notice Reserve token if token not reserved.
      * @param _tokenId ID of the NFT to modify.
      * @param _imprint Proof of the certification.
@@ -270,7 +274,7 @@ contract ArianeeStore is Pausable {
         _dispatchRewardsAtHydrate(_providerBrand, _reward);
     }
     /**
-     * @dev Public function for request a nft and dispatch rewards.
+     * @notice Request a nft and dispatch rewards.
      * @param _tokenId ID of the NFT to transfer.
      * @param _hash Hash of tokenId + newOwner address.
      * @param _keepRequestToken If false erase the access token of the NFT.
@@ -281,7 +285,7 @@ contract ArianeeStore is Pausable {
         _dispatchRewardsAtRequest(_providerOwner, _reward);
     }
     /**
-     * @dev Change the percent of rewards per actor.
+     * @notice Change the percent of rewards per actor.
      * @notice Can only be called by owner.
      * @param _percentInfra Percent get by the infrastructure maintener.
      * @param _percentBrandsProvider Percent get by the brand software provider.
@@ -302,7 +306,7 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Internal function that dispatch rewards at creation.
+     * @dev Dispatch rewards at creation.
      * @param _providerBrand address of the provider of the interface.
      * @param _reward reward for this token.
      */
@@ -313,7 +317,7 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Internal function that dispatch rewards at client reception
+     * @dev Dispatch rewards at client reception
      * @param _providerOwner address of the provider of the interface.
      * @param _reward reward for this token.
      */
@@ -323,8 +327,8 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * @dev Get all Arias from the previous store.
-     * @dev Can only be called by the owner.
+     * @notice Get all Arias from the previous store.
+     * @notice Can only be called by the owner.
      * @param _oldStoreAddress address of the previous store.
      */
     function getAriaFromOldStore(address _oldStoreAddress) onlyOwner() public{
@@ -333,8 +337,8 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * @dev Withdraw all arias to the new store.
-     * @dev Can only be called by the new store.
+     * @notice Withdraw all arias to the new store.
+     * @notice Can only be called by the new store.
      */
     function withdrawArias() external{
         require(address(this) != creditHistory.arianeeStoreAddress());
@@ -343,7 +347,7 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * @dev The USD credit price per type.
+     * @notice The USD credit price per type.
      * @param _creditType for which we want the USD price.
      * @return price in USD.
      */
@@ -352,7 +356,7 @@ contract ArianeeStore is Pausable {
     }
     
     /**
-     * @dev dispatch for rewards.
+     * @notice dispatch for rewards.
      * @param _receiver for which we want the % of rewards.
      * @return % of rewards.
      */
@@ -362,7 +366,7 @@ contract ArianeeStore is Pausable {
     
     /**
      * @dev Allow or not a transfer in the SmartAsset contract.
-     * @notice not used for now.
+     * @dev not used for now.
      * @param _to Receiver of the NFT.
      * @param _from Actual owner of the NFT.
      * @param _tokenId id of the
