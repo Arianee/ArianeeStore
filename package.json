@@ -7,11 +7,17 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint './**/*.js?(x)'"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "openzeppelin-solidity": "^1.12.0"
+    "@0xcert/ethereum-erc20-contracts": "^1.7.0",
+    "@0xcert/ethereum-erc721-contracts": "^1.7.0",
+    "@0xcert/ethereum-utils-contracts": "^1.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0"
   }
 }
