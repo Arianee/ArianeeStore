@@ -1,4 +1,4 @@
-pragma solidity 0.5.1;
+pragma solidity 0.5.6;
 
 import "@0xcert/ethereum-utils-contracts/src/contracts/math/safe-math.sol";
 import "@0xcert/ethereum-erc721-contracts/src/contracts/nf-token-metadata-enumerable.sol";
