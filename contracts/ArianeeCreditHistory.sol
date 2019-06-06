@@ -47,7 +47,7 @@ Ownable
    * @dev public function that change the store contract address.
    * @notice Can only be called by the contract owner.
    */
-  function setArianeeStoreAddress(address _newArianeeStoreAdress) onlyOwner() public{
+  function setArianeeStoreAddress(address _newArianeeStoreAdress) onlyOwner() external {
       arianeeStoreAddress = _newArianeeStoreAdress;
       emit SetAddress("arianeeStore", _newArianeeStoreAdress);
   }
@@ -60,7 +60,7 @@ Ownable
    * @param _quantity of credit buyed.
    * @param _type of credit buyed.
    */
-  function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) public onlyStore() {
+  function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) external onlyStore() {
 
       CreditBuy memory _creditBuy = CreditBuy({
           price: _price,
@@ -78,7 +78,7 @@ Ownable
    * @param _type type of credit.
    * @return price of the credit.
    */
-  function consumeCredits(address _spender, uint256 _type, uint256 _quantity) public onlyStore() returns (uint256){
+  function consumeCredits(address _spender, uint256 _type, uint256 _quantity) external onlyStore() returns (uint256) {
       require(totalCredits[_spender][_type]>0, "No credit of that type");
       uint256 _index = historyIndex[_spender][_type];
       require(creditHistory[_spender][_type][_index].quantity >= _quantity);
@@ -101,7 +101,7 @@ Ownable
    * @param _index of the credit for which we want the history.
    * @return Credit history.
    */
-  function userCreditHistory(address _spender, uint256 _type, uint256 _index) external view returns(uint256 _price, uint256 _quantity){
+  function userCreditHistory(address _spender, uint256 _type, uint256 _index) external view returns (uint256 _price, uint256 _quantity) {
       _price = creditHistory[_spender][_type][_index].price;
       _quantity = creditHistory[_spender][_type][_index].quantity;
   }
