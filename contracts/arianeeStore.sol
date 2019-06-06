@@ -14,9 +14,9 @@ contract ERC20Interface {
  * @title Interface for contracts conforming to ERC-721
  */
 contract ERC721Interface {
-    function reserveToken(uint256 id, address _to, uint256 _rewards) public;
+    function reserveToken(uint256 id, address _to, uint256 _rewards) external;
     function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, address _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _owner) public returns(uint256);
-    function requestToken(uint256 _tokenId, bytes32 _hash, bool _keepRequestToken, address _newOwner, bytes memory _signature) public returns(uint256);
+    function requestToken(uint256 _tokenId, bytes32 _hash, bool _keepRequestToken, address _newOwner, bytes calldata _signature) external returns(uint256);
     function getRewards(uint256 _tokenId) external view returns(uint256);
 }
 
@@ -25,9 +25,9 @@ contract ERC721Interface {
  * @title Interface to interact with ArianneCreditHistory
  */
 contract ArianeeCreditHistory {
-    function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) public;
-    function consumeCredits(address _spender, uint256 _type, uint256 _quantity) public returns(uint256);
-    function arianeeStoreAddress() public returns(address);
+    function addCreditHistory(address _spender, uint256 _price, uint256 _quantity, uint256 _type) external;
+    function consumeCredits(address _spender, uint256 _type, uint256 _quantity) external returns(uint256);
+    function arianeeStoreAddress() external returns(address);
 }
 
 
@@ -140,7 +140,7 @@ contract ArianeeStore is Pausable {
      * @notice This account is the only that can change the Aria/$ exchange rate.
      * @param _authorizedExchangeAddress new address of the authorized echange address.
      */
-    function setAuthorizedExchangeAddress(address _authorizedExchangeAddress) public onlyOwner(){
+    function setAuthorizedExchangeAddress(address _authorizedExchangeAddress) external onlyOwner(){
         authorizedExchangeAddress = _authorizedExchangeAddress;
         emit SetAddress("authorizedExchange", _authorizedExchangeAddress);
     }
@@ -149,7 +149,7 @@ contract ArianeeStore is Pausable {
      * @notice Change address of the protocol infrastructure.
      * @param _protocolInfraAddress new address of the protocol intfrastructure receiver.
      */
-    function setProtocolInfraAddress(address _protocolInfraAddress) public onlyOwner() {
+    function setProtocolInfraAddress(address _protocolInfraAddress) external onlyOwner() {
         protocolInfraAddress = _protocolInfraAddress;
         emit SetAddress("protocolInfra", _protocolInfraAddress);
     }
@@ -158,7 +158,7 @@ contract ArianeeStore is Pausable {
      * @notice Change address of the Arianee project address.
      * @param _arianeeProjectAddress new address of the Arianee project receiver.
      */
-    function setArianeeProjectAddress(address _arianeeProjectAddress) public onlyOwner() {
+    function setArianeeProjectAddress(address _arianeeProjectAddress) external onlyOwner() {
         arianeeProjectAddress = _arianeeProjectAddress;
         emit SetAddress("arianeeProject", _arianeeProjectAddress);
     }
@@ -169,7 +169,7 @@ contract ArianeeStore is Pausable {
      * @param _creditType uint256 credit type to change the price
      * @param _price uint256 new price
      */
-    function setCreditPrice(uint256 _creditType, uint256 _price) public onlyOwner() {
+    function setCreditPrice(uint256 _creditType, uint256 _price) external onlyOwner() {
         creditPricesUSD[_creditType] = _price;
         _updateCreditPrice();
 
@@ -181,7 +181,7 @@ contract ArianeeStore is Pausable {
      * @notice Can only be called by the authorized exchange address.
      * @param _ariaUSDExchange price of 1 $cent in aria.
     */
-    function setAriaUSDExchange(uint256 _ariaUSDExchange) public {
+    function setAriaUSDExchange(uint256 _ariaUSDExchange) external {
         require(msg.sender == authorizedExchangeAddress);
         ariaUSDExchange = _ariaUSDExchange;
         _updateCreditPrice();
@@ -190,34 +190,12 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Internal function update creditPrice.
-     * @notice creditPrice need to be >100
-     */
-    function _updateCreditPrice() internal{
-        require(creditPricesUSD[0] * ariaUSDExchange >=100);
-        require(creditPricesUSD[1] * ariaUSDExchange >=100);
-        require(creditPricesUSD[2] * ariaUSDExchange >=100);
-        creditPrices[0] = creditPricesUSD[0] * ariaUSDExchange;
-        creditPrices[1] = creditPricesUSD[1] * ariaUSDExchange;
-        creditPrices[2] = creditPricesUSD[2] * ariaUSDExchange;
-    }
-
-    /**
-     * @notice Send the price a of a credit in aria
-     * @param _creditType uint256
-     * @return returne the price of the credit type.
-     */
-    function getCreditPrice(uint256 _creditType) public view returns (uint256) {
-        return creditPrices[_creditType];
-    }
-
-    /**
      * @notice Buy new credit against Aria
      * @param _creditType uint256 credit type to buy
      * @param _quantity uint256 quantity to buy
      * @param _to receiver of the credits
      */
-    function buyCredit(uint256 _creditType, uint256 _quantity, address _to) public whenNotPaused(){
+    function buyCredit(uint256 _creditType, uint256 _quantity, address _to) external whenNotPaused() {
 
         uint256 tokens = SafeMath.mul(_quantity, creditPrices[_creditType]);
 
@@ -235,27 +213,6 @@ contract ArianeeStore is Pausable {
     }
 
     /**
-     * @dev Spend credits
-     * @param _type credit type used.
-     * @param _quantity of credit to spend.
-     */
-    function _spendSmartAssetsCreditFunction(uint256 _type, uint256 _quantity) internal returns (uint256) {
-        uint256 rewards = creditHistory.consumeCredits(msg.sender, _type, _quantity);
-        emit CreditSpended(_type, _quantity);
-        return rewards;
-    }
-
-    /**
-     * @notice Reserve ArianeeSmartAsset
-     * @param _id uint256 id of the NFT
-     * @param _to address receiver of the token
-     */
-    function reserveToken(uint256 _id, address _to) public whenNotPaused(){
-        uint256 rewards = _spendSmartAssetsCreditFunction(0, 1);
-        nonFungibleRegistry.reserveToken(_id, _to, rewards);
-    }
-
-    /**
      * @notice Hydrate token and dispatch rewards.
      * @notice Reserve token if token not reserved.
      * @param _tokenId ID of the NFT to modify.
@@ -266,13 +223,24 @@ contract ArianeeStore is Pausable {
      * @param _initialKeyIsRequestKey If true set initial key as request key.
      * @param _providerBrand address of the provider of the interface.
      */
-    function hydrateToken(uint256 _tokenId, bytes32 _imprint, string memory _uri, address _encryptedInitialKey, uint256 _tokenRecoveryTimestamp, bool _initialKeyIsRequestKey, address _providerBrand) public whenNotPaused(){
+    function hydrateToken(
+        uint256 _tokenId,
+        bytes32 _imprint,
+        string calldata _uri,
+        address _encryptedInitialKey,
+        uint256 _tokenRecoveryTimestamp,
+        bool _initialKeyIsRequestKey,
+        address _providerBrand
+    )
+        external whenNotPaused()
+    {
         if(nonFungibleRegistry.getRewards(_tokenId) == 0){
             reserveToken(_tokenId, msg.sender);
         }
         uint256 _reward = nonFungibleRegistry.hydrateToken(_tokenId, _imprint, _uri, _encryptedInitialKey, _tokenRecoveryTimestamp, _initialKeyIsRequestKey,  msg.sender);
         _dispatchRewardsAtHydrate(_providerBrand, _reward);
     }
+    
     /**
      * @notice Request a nft and dispatch rewards.
      * @param _tokenId ID of the NFT to transfer.
@@ -280,10 +248,19 @@ contract ArianeeStore is Pausable {
      * @param _keepRequestToken If false erase the access token of the NFT.
      * @param _providerOwner address of the provider of the interface.
      */
-    function requestToken(uint256 _tokenId, bytes32 _hash, bool _keepRequestToken, address _providerOwner, bytes memory _signature) public whenNotPaused(){
+    function requestToken(
+        uint256 _tokenId,
+        bytes32 _hash,
+        bool _keepRequestToken,
+        address _providerOwner,
+        bytes calldata _signature
+    ) 
+        external whenNotPaused()
+    {
         uint256 _reward = nonFungibleRegistry.requestToken(_tokenId, _hash, _keepRequestToken, msg.sender, _signature);
         _dispatchRewardsAtRequest(_providerOwner, _reward);
     }
+    
     /**
      * @notice Change the percent of rewards per actor.
      * @notice Can only be called by owner.
@@ -293,8 +270,15 @@ contract ArianeeStore is Pausable {
      * @param _arianeeProject Percent get by the Arianee fondation.
      * @param _assetHolder Percent get by the asset owner.
      */
-
-    function setDispatchPercent(uint8 _percentInfra, uint8 _percentBrandsProvider, uint8 _percentOwnerProvider, uint8 _arianeeProject, uint8 _assetHolder) public onlyOwner(){
+    function setDispatchPercent(
+        uint8 _percentInfra,
+        uint8 _percentBrandsProvider,
+        uint8 _percentOwnerProvider,
+        uint8 _arianeeProject,
+        uint8 _assetHolder
+    )
+        external onlyOwner()
+    {
         require(_percentInfra+_percentBrandsProvider+_percentOwnerProvider+_arianeeProject+_assetHolder == 100);
         dispatchPercent[0] = _percentInfra;
         dispatchPercent[1] = _percentBrandsProvider;
@@ -304,34 +288,13 @@ contract ArianeeStore is Pausable {
 
         emit NewDispatchPercent(_percentInfra, _percentBrandsProvider, _percentOwnerProvider, _arianeeProject, _assetHolder);
     }
-
-    /**
-     * @dev Dispatch rewards at creation.
-     * @param _providerBrand address of the provider of the interface.
-     * @param _reward reward for this token.
-     */
-    function _dispatchRewardsAtHydrate(address _providerBrand, uint256 _reward) internal{
-        acceptedToken.transfer(protocolInfraAddress,(_reward/100)*dispatchPercent[0]);
-        acceptedToken.transfer(arianeeProjectAddress,(_reward/100)*dispatchPercent[3]);
-        acceptedToken.transfer(_providerBrand,(_reward/100)*dispatchPercent[1]);
-    }
-
-    /**
-     * @dev Dispatch rewards at client reception
-     * @param _providerOwner address of the provider of the interface.
-     * @param _reward reward for this token.
-     */
-    function _dispatchRewardsAtRequest(address _providerOwner, uint256 _reward) internal{
-        acceptedToken.transfer(_providerOwner,(_reward/100)*dispatchPercent[2]);
-        acceptedToken.transfer(msg.sender,(_reward/100)*dispatchPercent[4]);
-    }
     
     /**
      * @notice Get all Arias from the previous store.
      * @notice Can only be called by the owner.
      * @param _oldStoreAddress address of the previous store.
      */
-    function getAriaFromOldStore(address _oldStoreAddress) onlyOwner() public{
+    function getAriaFromOldStore(address _oldStoreAddress) onlyOwner() external {
         ArianeeStore oldStore = ArianeeStore(address(_oldStoreAddress));
         oldStore.withdrawArias();
     }
@@ -340,7 +303,7 @@ contract ArianeeStore is Pausable {
      * @notice Withdraw all arias to the new store.
      * @notice Can only be called by the new store.
      */
-    function withdrawArias() external{
+    function withdrawArias() external {
         require(address(this) != creditHistory.arianeeStoreAddress());
         require(msg.sender == creditHistory.arianeeStoreAddress());
         acceptedToken.transfer(address(creditHistory.arianeeStoreAddress()),acceptedToken.balanceOf(address(this)));
@@ -351,7 +314,7 @@ contract ArianeeStore is Pausable {
      * @param _creditType for which we want the USD price.
      * @return price in USD.
      */
-    function creditPriceUSD(uint256 _creditType) external view returns(uint256 _creditPriceUSD){
+    function creditPriceUSD(uint256 _creditType) external view returns(uint256 _creditPriceUSD) {
         _creditPriceUSD = creditPricesUSD[_creditType];
     }
     
@@ -365,6 +328,15 @@ contract ArianeeStore is Pausable {
     }
     
     /**
+     * @notice Send the price a of a credit in aria
+     * @param _creditType uint256
+     * @return returne the price of the credit type.
+     */
+    function getCreditPrice(uint256 _creditType) external view returns (uint256) {
+        return creditPrices[_creditType];
+    }
+    
+    /**
      * @dev Allow or not a transfer in the SmartAsset contract.
      * @dev not used for now.
      * @param _to Receiver of the NFT.
@@ -374,6 +346,61 @@ contract ArianeeStore is Pausable {
      */
     function canTransfer(address _to,address _from,uint256 _tokenId) external pure returns(bool){
         return true;
+    }
+    
+    /**
+     * @notice Reserve ArianeeSmartAsset
+     * @param _id uint256 id of the NFT
+     * @param _to address receiver of the token
+     */
+    function reserveToken(uint256 _id, address _to) public whenNotPaused() {
+        uint256 rewards = _spendSmartAssetsCreditFunction(0, 1);
+        nonFungibleRegistry.reserveToken(_id, _to, rewards);
+    }
+    
+    /**
+     * @dev Internal function update creditPrice.
+     * @notice creditPrice need to be >100
+     */
+    function _updateCreditPrice() internal{
+        require(creditPricesUSD[0] * ariaUSDExchange >=100);
+        require(creditPricesUSD[1] * ariaUSDExchange >=100);
+        require(creditPricesUSD[2] * ariaUSDExchange >=100);
+        creditPrices[0] = creditPricesUSD[0] * ariaUSDExchange;
+        creditPrices[1] = creditPricesUSD[1] * ariaUSDExchange;
+        creditPrices[2] = creditPricesUSD[2] * ariaUSDExchange;
+    }
+    
+    /**
+     * @dev Spend credits
+     * @param _type credit type used.
+     * @param _quantity of credit to spend.
+     */
+    function _spendSmartAssetsCreditFunction(uint256 _type, uint256 _quantity) internal returns (uint256) {
+        uint256 rewards = creditHistory.consumeCredits(msg.sender, _type, _quantity);
+        emit CreditSpended(_type, _quantity);
+        return rewards;
+    }
+    
+    /**
+     * @dev Dispatch rewards at creation.
+     * @param _providerBrand address of the provider of the interface.
+     * @param _reward reward for this token.
+     */
+    function _dispatchRewardsAtHydrate(address _providerBrand, uint256 _reward) internal {
+        acceptedToken.transfer(protocolInfraAddress,(_reward/100)*dispatchPercent[0]);
+        acceptedToken.transfer(arianeeProjectAddress,(_reward/100)*dispatchPercent[3]);
+        acceptedToken.transfer(_providerBrand,(_reward/100)*dispatchPercent[1]);
+    }
+
+    /**
+     * @dev Dispatch rewards at client reception
+     * @param _providerOwner address of the provider of the interface.
+     * @param _reward reward for this token.
+     */
+    function _dispatchRewardsAtRequest(address _providerOwner, uint256 _reward) internal {
+        acceptedToken.transfer(_providerOwner,(_reward/100)*dispatchPercent[2]);
+        acceptedToken.transfer(msg.sender,(_reward/100)*dispatchPercent[4]);
     }
 
 }
