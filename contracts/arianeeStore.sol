@@ -341,17 +341,28 @@ contract ArianeeStore is Pausable {
      * @dev not used for now.
      * @param _to Receiver of the NFT.
      * @param _from Actual owner of the NFT.
-     * @param _tokenId id of the
+     * @param _tokenId id of the token.
      * @return true.
      */
     function canTransfer(address _to,address _from,uint256 _tokenId) external pure returns(bool){
         return true;
     }
+
+    /**
+     * @dev Allow or not the destroy of a token in the SmartAsset contract.
+     * @dev not used for now.
+     * @param _tokenId id of the token.
+     * @param _sender address asking the destroy.
+     * @return false.
+     */
+    function canDestroy(uint256 _tokenId, address _sender) external pure returns(bool){
+      return false;
+    }
     
     /**
      * @notice Reserve ArianeeSmartAsset
      * @param _id uint256 id of the NFT
-     * @param _to address receiver of the token
+     * @param _to address receiver of the token.
      */
     function reserveToken(uint256 _id, address _to) public whenNotPaused() {
         uint256 rewards = _spendSmartAssetsCreditFunction(0, 1);
