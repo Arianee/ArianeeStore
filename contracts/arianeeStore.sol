@@ -92,9 +92,9 @@ contract ArianeeStore is Pausable {
     event NewAriaUSDExchange(uint256 _ariaUSDExchange);
 
     /**
-     * @dev This emits when credits are buyed.
+     * @dev This emits when credits are bought.
      */
-    event CreditBuyed(address buyer, address _receiver, uint256 _creditType, uint256 quantity);
+    event CreditBought(address buyer, address _receiver, uint256 _creditType, uint256 quantity);
 
     /**
      * @dev This emits when a new dispatch percent is set.
@@ -208,7 +208,7 @@ contract ArianeeStore is Pausable {
 
         creditHistory.addCreditHistory(_to, creditPrices[_creditType], _quantity, _creditType);
 
-        emit CreditBuyed(msg.sender, _to, _creditType, _quantity);
+        emit BoughtCredit(msg.sender, _to, _creditType, _quantity);
 
     }
 
